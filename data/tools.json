@@ -1,0 +1,200 @@
+[
+  {
+    "id": "chatgpt",
+    "name": "ChatGPT",
+    "vendor": "OpenAI",
+    "category": "チャットAI",
+    "url": "https://chatgpt.com/",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "openai.com",
+      "chatgpt.com"
+    ],
+    "pricing_url": ""
+  },
+  {
+    "id": "claude",
+    "name": "Claude",
+    "vendor": "Anthropic",
+    "category": "チャットAI",
+    "url": "https://claude.ai/",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "claude.com",
+      "anthropic.com",
+      "claude.ai"
+    ],
+    "pricing_url": ""
+  },
+  {
+    "id": "gemini",
+    "name": "Gemini",
+    "vendor": "Google",
+    "category": "チャットAI",
+    "url": "https://gemini.google.com/",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "gemini.google",
+      "one.google.com",
+      "google.com"
+    ],
+    "pricing_url": ""
+  },
+  {
+    "id": "copilot",
+    "name": "Microsoft Copilot",
+    "vendor": "Microsoft",
+    "category": "チャットAI",
+    "url": "https://copilot.microsoft.com/",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "microsoft.com"
+    ],
+    "pricing_url": ""
+  },
+  {
+    "id": "perplexity",
+    "name": "Perplexity",
+    "vendor": "Perplexity AI",
+    "category": "AI検索",
+    "url": "https://www.perplexity.ai/",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "perplexity.ai"
+    ],
+    "pricing_url": ""
+  },
+  {
+    "id": "deepl",
+    "name": "DeepL",
+    "vendor": "DeepL",
+    "category": "翻訳",
+    "url": "https://www.deepl.com/",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "deepl.com"
+    ],
+    "pricing_url": ""
+  },
+  {
+    "id": "notion-ai",
+    "name": "Notion AI",
+    "vendor": "Notion",
+    "category": "文書・メモ",
+    "url": "https://www.notion.com/product/ai",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "notion.com",
+      "notion.so"
+    ],
+    "pricing_url": ""
+  },
+  {
+    "id": "canva",
+    "name": "Canva",
+    "vendor": "Canva",
+    "category": "画像・デザイン",
+    "url": "https://www.canva.com/",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "canva.com"
+    ],
+    "pricing_url": ""
+  },
+  {
+    "id": "midjourney",
+    "name": "Midjourney",
+    "vendor": "Midjourney",
+    "category": "画像・デザイン",
+    "url": "https://www.midjourney.com/",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "midjourney.com"
+    ],
+    "pricing_url": ""
+  },
+  {
+    "id": "github-copilot",
+    "name": "GitHub Copilot",
+    "vendor": "GitHub",
+    "category": "コーディング",
+    "url": "https://github.com/features/copilot",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "github.com"
+    ],
+    "pricing_url": ""
+  },
+  {
+    "id": "cursor",
+    "name": "Cursor",
+    "vendor": "Anysphere",
+    "category": "コーディング",
+    "url": "https://cursor.com/",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "cursor.com"
+    ],
+    "pricing_url": ""
+  },
+  {
+    "id": "elevenlabs",
+    "name": "ElevenLabs",
+    "vendor": "ElevenLabs",
+    "category": "音声",
+    "url": "https://elevenlabs.io/",
+    "affiliate_url": "",
+    "plans": [],
+    "free_tier": "",
+    "last_verified": "",
+    "sources": [],
+    "domains": [
+      "elevenlabs.io"
+    ],
+    "pricing_url": ""
+  }
+]

@@ -1,0 +1,54 @@
+name: "① 探索(朝に押す)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      scout:
+        description: "新ツール探索(スカウト)も実行する"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: explore
+  cancel-in-progress: false
+
+jobs:
+  explore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: AIチームが調査(Haiku調査員 → コード検証 → Sonnetレビュー)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SCOUT: ${{ inputs.scout && '1' || '0' }}
+        run: python3 scripts/explore.py
+
+      - name: サイトが壊れていないか確認
+        run: python3 scripts/build.py
+
+      - name: 承認待ちPRを作成
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet -- data/tools.json data/changelog.json; then
+            echo "反映できる結果なし。PRは作りません。"; exit 0
+          fi
+          # 前日以前の未承認PRは古いので閉じる
+          for n in $(gh pr list --label explore --state open --json number -q '.[].number'); do
+            gh pr close "$n" --delete-branch --comment "新しい探索結果があるため閉じました"
+          done
+          d=$(TZ=Asia/Tokyo date +%F-%H%M)
+          git config user.name "explore-bot"
+          git config user.email "explore-bot@users.noreply.github.com"
+          git switch -c "explore/$d"
+          git add data/
+          git commit -m "探索結果 $d"
+          git push -u origin "explore/$d"
+          gh label create explore --color 2f5d50 2>/dev/null || true
+          gh pr create --title "【承認待ち】探索結果 $d" --body-file .explore/pr_body.md --label explore --base main

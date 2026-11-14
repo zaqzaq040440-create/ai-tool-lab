@@ -1,0 +1,308 @@
+{
+  "date": "2026-11-17",
+  "started_at": "2026-11-15T08:16:23+09:00",
+  "duration_s": 0.0,
+  "scout": false,
+  "agents": [
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "Gemini",
+      "status": "failed",
+      "in": 0,
+      "out": 0,
+      "searches": 0,
+      "cost_usd": 0,
+      "sec": 0.0,
+      "note": "HTTP 529: overloaded"
+    },
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "Claude",
+      "status": "done",
+      "in": 17000,
+      "out": 600,
+      "searches": 1,
+      "cost_usd": 0.012,
+      "sec": 0.0,
+      "note": ""
+    },
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "ChatGPT",
+      "status": "done",
+      "in": 17000,
+      "out": 600,
+      "searches": 1,
+      "cost_usd": 0.012,
+      "sec": 0.0,
+      "note": ""
+    },
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "DeepL",
+      "status": "done",
+      "in": 17000,
+      "out": 600,
+      "searches": 1,
+      "cost_usd": 0.012,
+      "sec": 0.0,
+      "note": ""
+    },
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "Microsoft Copilot",
+      "status": "done",
+      "in": 17000,
+      "out": 600,
+      "searches": 1,
+      "cost_usd": 0.012,
+      "sec": 0.0,
+      "note": ""
+    },
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "Perplexity",
+      "status": "done",
+      "in": 17000,
+      "out": 600,
+      "searches": 1,
+      "cost_usd": 0.012,
+      "sec": 0.0,
+      "note": ""
+    },
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "Notion AI",
+      "status": "done",
+      "in": 17000,
+      "out": 600,
+      "searches": 1,
+      "cost_usd": 0.012,
+      "sec": 0.0,
+      "note": ""
+    },
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "GitHub Copilot",
+      "status": "done",
+      "in": 17000,
+      "out": 600,
+      "searches": 1,
+      "cost_usd": 0.012,
+      "sec": 0.0,
+      "note": ""
+    },
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "Canva",
+      "status": "done",
+      "in": 17000,
+      "out": 600,
+      "searches": 1,
+      "cost_usd": 0.012,
+      "sec": 0.0,
+      "note": ""
+    },
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "Midjourney",
+      "status": "done",
+      "in": 17000,
+      "out": 600,
+      "searches": 1,
+      "cost_usd": 0.012,
+      "sec": 0.0,
+      "note": ""
+    },
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "ElevenLabs",
+      "status": "done",
+      "in": 17000,
+      "out": 600,
+      "searches": 1,
+      "cost_usd": 0.012,
+      "sec": 0.0,
+      "note": ""
+    },
+    {
+      "role": "researcher",
+      "model": "claude-haiku-5-5",
+      "target": "Cursor",
+      "status": "done",
+      "in": 17000,
+      "out": 600,
+      "searches": 1,
+      "cost_usd": 0.012,
+      "sec": 0.0,
+      "note": ""
+    },
+    {
+      "role": "reviewer",
+      "model": "claude-sonnet-5-5",
+      "target": "ChatGPT",
+      "status": "confirm",
+      "in": 26000,
+      "out": 900,
+      "searches": 3,
+      "cost_usd": 0.091,
+      "sec": 0.0,
+      "note": "公式で確認"
+    },
+    {
+      "role": "reviewer",
+      "model": "claude-sonnet-5-5",
+      "target": "Claude",
+      "status": "confirm",
+      "in": 26000,
+      "out": 900,
+      "searches": 3,
+      "cost_usd": 0.091,
+      "sec": 0.0,
+      "note": "公式で確認"
+    },
+    {
+      "role": "reviewer",
+      "model": "claude-sonnet-5-5",
+      "target": "Perplexity",
+      "status": "confirm",
+      "in": 26000,
+      "out": 900,
+      "searches": 3,
+      "cost_usd": 0.091,
+      "sec": 0.0,
+      "note": "公式で確認"
+    }
+  ],
+  "log": [
+    {
+      "t": "08:16:23",
+      "who": "orchestrator",
+      "msg": "対象 12 件: Gemini, ChatGPT, Claude, Microsoft Copilot, Perplexity, DeepL, Notion AI, Canva, Midjourney, GitHub Copilot, Cursor, ElevenLabs"
+    },
+    {
+      "t": "08:16:23",
+      "who": "orchestrator",
+      "msg": "researcher × 12 を並列起動"
+    },
+    {
+      "t": "08:16:23",
+      "who": "researcher",
+      "msg": "Gemini: 失敗 HTTP 529: overloaded"
+    },
+    {
+      "t": "08:16:23",
+      "who": "checker",
+      "msg": "変化なし/初回 8 件・要レビュー 3 件・失敗 1 件"
+    },
+    {
+      "t": "08:16:23",
+      "who": "orchestrator",
+      "msg": "reviewer(Sonnet)へ 3 件エスカレーション"
+    },
+    {
+      "t": "08:16:23",
+      "who": "reviewer",
+      "msg": "ChatGPT: confirm — 公式で確認"
+    },
+    {
+      "t": "08:16:23",
+      "who": "reviewer",
+      "msg": "Claude: confirm — 公式で確認"
+    },
+    {
+      "t": "08:16:23",
+      "who": "reviewer",
+      "msg": "Perplexity: confirm — 公式で確認"
+    },
+    {
+      "t": "08:16:23",
+      "who": "orchestrator",
+      "msg": "完了: 変更 1 / 新規 0 / 概算 ¥60.8"
+    }
+  ],
+  "totals": {
+    "in": 265000,
+    "out": 9300,
+    "searches": 20,
+    "cost_usd": 0.405,
+    "cost_jpy": 60.8
+  },
+  "baseline_all_sonnet_usd": 0.823,
+  "counts": {
+    "changed": 1,
+    "new": 0,
+    "first": 0,
+    "same": 10,
+    "skipped": 1
+  },
+  "items": {
+    "changed": [
+      {
+        "name": "ChatGPT",
+        "detail": "Pro $20/月 → Pro $25/月"
+      }
+    ],
+    "new": [],
+    "first": [],
+    "same": [
+      {
+        "name": "Microsoft Copilot",
+        "detail": ""
+      },
+      {
+        "name": "DeepL",
+        "detail": ""
+      },
+      {
+        "name": "Notion AI",
+        "detail": ""
+      },
+      {
+        "name": "Canva",
+        "detail": ""
+      },
+      {
+        "name": "Midjourney",
+        "detail": ""
+      },
+      {
+        "name": "GitHub Copilot",
+        "detail": ""
+      },
+      {
+        "name": "Cursor",
+        "detail": ""
+      },
+      {
+        "name": "ElevenLabs",
+        "detail": ""
+      },
+      {
+        "name": "Claude",
+        "detail": ""
+      },
+      {
+        "name": "Perplexity",
+        "detail": ""
+      }
+    ],
+    "skipped": [
+      {
+        "name": "Gemini",
+        "detail": "調査失敗"
+      }
+    ]
+  }
+}

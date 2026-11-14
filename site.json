@@ -1,0 +1,27 @@
+{
+  "title": "AIツール料金ウォッチ",
+  "description": "主要AIツールの料金・無料枠を毎日AIが調査し、変更履歴を出典つきで記録する比較サイト",
+  "base_url": "https://zaqzaq040440-create.github.io/ai-tool-lab",
+  "repo": "zaqzaq040440-create/ai-tool-lab",
+
+  "tools_per_day": 6,
+  "max_reviews_per_run": 4,
+  "max_new_candidates": 2,
+  "scout_weekdays": [0],
+
+  "models": {
+    "researcher": "claude-haiku-5-5",
+    "scout": "claude-haiku-5-5",
+    "reviewer": "claude-sonnet-5-5"
+  },
+
+  "pricing": {
+    "_note": "USD / 100万トークン。概算表示用。最新の単価は https://platform.claude.com/docs/en/about-claude/pricing で確認して更新してください",
+    "models": {
+      "claude-haiku-5-5": {"in": 0.10, "out": 0.50, "cache_read": 0.01, "long_threshold": 100000, "long_mult": 5},
+      "claude-sonnet-5-5": {"in": 2.0, "out": 10.0, "cache_read": 0.10}
+    },
+    "web_search_per_1000": 10,
+    "usd_jpy": 150
+  }
+}

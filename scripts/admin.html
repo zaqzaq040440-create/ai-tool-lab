@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>dashboard · AIツール料金ウォッチ</title>
+<style>
+:root{
+  --bg:#121318;--win:#1b1d24;--panel:#20232b;--line:#343846;--fg:#e6e6ea;--mut:#8b8f9c;--dim:#5c606c;
+  --son:#f0965f;--hai:#8fb4ff;--code:#7fd19a;--you:#b79cff;--bad:#ff7a7a;--warn:#f2cf66;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,"Hiragino Sans",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.55 var(--mono);-webkit-text-size-adjust:100%}
+.win{max-width:760px;margin:0 auto;background:var(--win);min-height:100vh;border-left:1px solid #000;border-right:1px solid #000}
+.bar{display:flex;align-items:center;gap:7px;padding:10px 12px;background:#24262e;border-bottom:1px solid #000}
+.dot{width:11px;height:11px;border-radius:50%}.bar span{flex:1;text-align:center;color:var(--mut);font-size:11px;margin-right:50px}
+.wrap{padding:14px 14px 90px}
+.head{text-align:center;font-weight:700;letter-spacing:.06em;font-size:12.5px;padding:6px 0 10px;border-bottom:3px double var(--line)}
+.head .s{color:var(--son)}.head .h{color:var(--hai)}.head i{color:var(--dim);font-style:normal;margin:0 6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;padding:10px 0 4px;color:var(--mut);font-size:11.5px}
+.legend b{display:inline-block;width:9px;height:9px;margin-right:6px;vertical-align:0}
+.phase{display:flex;justify-content:space-between;align-items:center;margin:10px 0 4px;padding:8px 10px;border:1px solid var(--line);background:var(--panel)}
+.phase{gap:10px}.phase .p{font-weight:700;white-space:nowrap}.phase .d{text-align:right}.phase .d{color:var(--mut);font-size:11.5px}
+.box{border:1.5px solid;padding:10px 12px;margin:0 auto;position:relative;background:transparent}
+.box h3{margin:0 0 6px;font-size:13.5px;text-align:center;font-weight:700}
+.box .sub{text-align:center;color:var(--mut);font-size:11.5px;margin-top:-4px;margin-bottom:6px}
+.you{border-color:var(--you)}.you h3{color:var(--you)}
+.code{border-color:var(--code)}.code h3{color:var(--code)}
+.son{border-color:var(--son)}.son h3{color:var(--son)}
+.hai{border-color:var(--hai)}.hai h3{color:var(--hai)}
+.link{display:flex;flex-direction:column;align-items:center;color:var(--dim);font-size:11.5px;padding:2px 0}
+.link .v{width:1px;height:14px;background:repeating-linear-gradient(var(--dim) 0 3px,transparent 3px 6px)}
+.link .lbl{padding:2px 0}.link .lbl b{color:var(--hai)}.link .lbl b.s{color:var(--son)}
+.link .arr{color:var(--son);font-size:10px;line-height:1}
+.swarm{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:620px){.swarm{grid-template-columns:repeat(3,1fr)}}
+.ag{border:1.5px solid var(--hai);padding:8px 8px 7px;text-align:center;min-width:0}
+.ag.scout{border-style:dashed}.ag.off{opacity:.38}
+.ag .n{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ag .m{color:var(--hai);font-size:11.5px}
+.pb{display:flex;align-items:center;gap:6px;margin:5px 0 3px}
+.pb .t{flex:1;height:13px;background:repeating-linear-gradient(90deg,#2b2f3a 0 2px,#252832 2px 4px);position:relative;overflow:hidden}
+.pb .f{position:absolute;inset:0 auto 0 0;background:var(--hai);transition:width .5s}
+.pb .f.run{width:40%!important;animation:slide 1.3s infinite ease-in-out}
+@keyframes slide{0%{left:-40%}100%{left:100%}}
+.pb .pc{font-size:11px;color:var(--mut);width:34px;text-align:right}
+.st{font-size:11.5px}.st.done{color:var(--code)}.st.failed{color:var(--bad)}.st.run{color:var(--hai)}.st.esc{color:var(--son)}
+.meta{font-size:10.5px;color:var(--dim)}
+.rows .r{display:grid;grid-template-columns:8.5em 1fr 3.6em;gap:8px;align-items:center;margin:3px 0}
+.rows .r .t{height:13px;background:repeating-linear-gradient(90deg,#2b2f3a 0 2px,#252832 2px 4px);position:relative}
+.rows .r .t i{position:absolute;inset:0 auto 0 0;background:var(--code)}
+.rows .r.w .t i{background:var(--son)}.rows .r.b .t i{background:var(--bad)}
+.rows .r em{font-style:normal;text-align:right}
+.foot{margin-top:6px;font-size:11.5px;color:var(--mut)}.foot b{color:var(--code)}
+.rv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:4px 0;padding:5px 0;border-top:1px dashed var(--line)}
+.rv:first-of-type{border-top:0}.rv .v{font-weight:700}.rv .note{grid-column:1/-1;color:var(--mut);font-size:11.5px}
+.v.confirm{color:var(--code)}.v.correct{color:var(--warn)}.v.reject,.v.failed{color:var(--bad)}
+.empty{color:var(--dim);text-align:center;font-size:12px;padding:4px}
+.btn{display:block;width:100%;margin-top:9px;padding:13px 10px;font:700 14px var(--mono);letter-spacing:.04em;border:1.5px solid;background:transparent;cursor:pointer;color:var(--fg);-webkit-tap-highlight-color:transparent}
+.btn:active{transform:translateY(1px)}
+.btn.go{border-color:var(--you);background:color-mix(in srgb,var(--you) 18%,transparent);color:#efe8ff}
+.btn.ok{border-color:var(--code);background:color-mix(in srgb,var(--code) 16%,transparent);color:#e6ffee}
+.btn.ng{border-color:var(--line);color:var(--mut);font-weight:400;font-size:12.5px;padding:9px}
+.btn.ng.arm{border-color:var(--bad);color:var(--bad)}
+.btn:disabled{opacity:.32;cursor:default}
+.two{display:grid;grid-template-columns:2fr 1fr;gap:8px}.two .btn{margin-top:9px}
+.chk{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:8px;color:var(--mut);font-size:12px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px}.kv span:nth-child(odd){color:var(--mut)}.kv span:nth-child(even){text-align:right}
+.split{display:flex;height:12px;margin:8px 0 4px;border:1px solid var(--line)}
+.split i{display:block}.cost-big{font-size:22px;font-weight:700;text-align:center;margin:2px 0}
+.save{text-align:center;color:var(--code);font-size:12px}
+.panel{border:1px solid var(--line);margin-top:20px;padding:14px 12px 10px;position:relative}
+.panel>.tt{position:absolute;top:-10px;left:12px;background:var(--win);padding:0 8px;color:var(--mut);border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.log{max-height:260px;overflow:auto;font-size:11.5px}
+.log div{display:grid;grid-template-columns:5.4em 7.2em 1fr;gap:6px;padding:1px 0}
+.log .tm{color:var(--dim)}.log .w{font-weight:700}
+.w.orchestrator,.w.checker{color:var(--code)}.w.researcher,.w.scout{color:var(--hai)}.w.reviewer{color:var(--son)}.w.you{color:var(--you)}
+.status{position:fixed;left:0;right:0;bottom:0;background:#15161b;border-top:1px solid #000;padding:8px 12px calc(8px + env(safe-area-inset-bottom));font-size:11.5px}
+.status .in{max-width:760px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--mut)}
+.status b{font-weight:400}.status .h{color:var(--hai)}.status .s{color:var(--son)}.status .c{color:var(--code)}.status .y{color:var(--you)}
+.status .cmd{width:100%;color:var(--fg)}.status .cmd em{color:var(--code);font-style:normal}
+details{margin-top:18px;color:var(--mut);font-size:12px}summary{cursor:pointer}
+details input{width:100%;margin:6px 0;padding:8px;background:var(--panel);color:var(--fg);border:1px solid var(--line);font:12px var(--mono)}
+details .btn{font-size:12px;padding:8px}
+a{color:var(--hai)}
+.toast{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);background:#2a2d37;border:1px solid var(--line);padding:8px 14px;font-size:12px;max-width:90%;display:none;z-index:9}
+.demo{color:var(--warn);text-align:center;font-size:11.5px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="bar"><i class="dot" style="background:#ff5f57"></i><i class="dot" style="background:#febc2e"></i><i class="dot" style="background:#28c840"></i><span id="path">~/ai-tool-lab · dashboard</span></div>
+  <div class="wrap">
+    <div class="head">AI TOOL WATCH<i>·</i><span class="h">HAIKU 5.5</span> SWARMS<i>·</i><span class="s">SONNET 5.5</span> REVIEWS</div>
+    <div class="legend">
+      <span><b style="background:var(--hai)"></b>haiku · researchers</span>
+      <span><b style="background:var(--son)"></b>sonnet · reviewer</span>
+      <span><b style="background:var(--code)"></b>code · free</span>
+      <span><b style="background:var(--you)"></b>you · approve</span>
+    </div>
+    <div id="demo" class="demo" hidden>DEMO MODE — 画面はサンプルデータです。ボタンを押すと流れを再現します</div>
+    <div class="phase"><span class="p" id="phase">—</span><span class="d" id="phaseD"></span></div>
+
+    <div class="box you" style="margin-top:12px">
+      <h3>YOU · 08:00</h3><div class="sub">探索をはじめる</div>
+      <button class="btn go" id="bExplore">① 探索を開始</button>
+      <label class="chk"><input type="checkbox" id="cScout"> 新ツール探索(スカウト)も実行</label>
+    </div>
+    <div class="link"><i class="v"></i><span class="arr">▼</span></div>
+
+    <div class="box code"><h3>ORCHESTRATOR · code</h3>
+      <div class="sub">API代 0円 · 確認日が古い順に対象を選ぶ</div>
+      <div class="kv" id="orch"></div>
+    </div>
+    <div class="link"><i class="v"></i><span class="lbl">delegate to researchers · <b>haiku 5.5</b> · 公式ドメインのみ検索</span><i class="v"></i><span class="arr">▼</span></div>
+
+    <div class="swarm" id="swarm"></div>
+    <div class="link"><i class="v"></i><span class="arr">▼</span></div>
+
+    <div class="box code"><h3>CHECKER · code</h3>
+      <div class="sub">形式チェックと前回との差分 · 変化なしはここで完了</div>
+      <div class="rows" id="checker"></div>
+      <div class="foot" id="checkerFoot"></div>
+    </div>
+    <div class="link"><i class="v"></i><span class="lbl">変更・新規・自信なし だけ → <b class="s">sonnet 5.5</b></span><i class="v"></i><span class="arr">▼</span></div>
+
+    <div class="box son"><h3>REVIEWER · Sonnet 5.5</h3>
+      <div class="sub">独立に再調査して confirm / correct / reject</div>
+      <div id="reviews"></div>
+    </div>
+    <div class="link"><i class="v"></i><span class="arr">▼</span></div>
+
+    <div class="box you"><h3>YOU · 12:00</h3><div class="sub" id="prSub">承認して公開</div>
+      <div class="kv" id="prKv"></div>
+      <div class="two">
+        <button class="btn ok" id="bApprove">② 承認して公開</button>
+        <button class="btn ng" id="bReject">却下</button>
+      </div>
+      <div class="foot" id="prLink" style="text-align:center"></div>
+    </div>
+    <div class="link"><i class="v"></i><span class="arr">▼</span></div>
+
+    <div class="box code"><h3>DEPLOY · GitHub Pages</h3><div class="sub" id="deploy">—</div></div>
+
+    <div class="panel"><span class="tt">cost · 今回の探索</span>
+      <div class="cost-big" id="cost">—</div>
+      <div class="split" id="split"></div>
+      <div class="kv" id="costKv"></div>
+      <div class="save" id="save"></div>
+    </div>
+
+    <div class="panel"><span class="tt">session log</span><div class="log" id="log"></div></div>
+
+    <details id="settings"><summary>設定(GitHubトークン)</summary>
+      <p>ボタンをこの画面から直接動かすには、GitHubの fine-grained token(このリポジトリだけ、権限は Actions・Contents・Pull requests を Read and write)を入れてください。トークンはこのブラウザの中だけに保存され、サイトには送られません。未設定のときはボタンでGitHubの該当画面が開きます。</p>
+      <input id="tok" type="password" placeholder="github_pat_..." autocomplete="off">
+      <button class="btn ng" id="bSave">保存</button>
+      <button class="btn ng" id="bClear">削除</button>
+    </details>
+  </div>
+</div>
+<div class="status"><div class="in" id="status"></div></div>
+<div class="toast" id="toast"></div>
+
+<script id="cfg" type="application/json">__CONFIG__</script>
+<script>
+(() => {
+"use strict";
+const CFG = JSON.parse(document.getElementById("cfg").textContent);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const RATE = (CFG.pricing && CFG.pricing.usd_jpy) || 150;
+const DEMO = /YOUR_GITHUB_NAME/.test(CFG.repo || "") || /[?&]demo/.test(location.search);
+const API = "https://api.github.com/repos/" + CFG.repo;
+const store = { get(){ try { return localStorage.getItem("gh_token") || ""; } catch { return ""; } },
+                set(v){ try { v ? localStorage.setItem("gh_token", v) : localStorage.removeItem("gh_token"); } catch {} } };
+
+let S = { phase: "idle", run: CFG.run || null, pr: null, explore: null, deploy: null, live: {} };
+let armReject = false;
+
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = "none", 3200); }
+const yen = usd => "¥" + (usd * RATE).toLocaleString("ja-JP", { maximumFractionDigits: usd * RATE < 10 ? 1 : 0 });
+
+const PH = {
+  idle:     ["● 待機中", "var(--mut)", "8時に ① を押すと探索がはじまります"],
+  exploring:["◐ 探索中", "var(--hai)", "AIチームが調査しています(数分〜15分)"],
+  awaiting: ["◆ 承認待ち", "var(--you)", "結果を確認して ② を押すと公開されます"],
+  deploying:["◑ 公開中", "var(--code)", "サイトを再生成しています"],
+  published:["✓ 公開済み", "var(--code)", "今日の作業は完了です"],
+  failed:   ["✕ 探索失敗", "var(--bad)", "GitHub Actions のログを確認してください"],
+};
+
+function render() {
+  const run = S.run, A = (run && run.agents) || [];
+  const exploring = S.phase === "exploring";
+  const [p, col, d] = PH[S.phase] || PH.idle;
+  $("phase").textContent = p; $("phase").style.color = col;
+  $("phaseD").textContent = run && !exploring ? `${d} · 最終探索 ${run.date}` : d;
+
+  // orchestrator
+  const R = A.filter(a => a.role === "researcher");
+  const nT = exploring ? (S.live.targets || CFG.tools_per_day) : R.length;
+  $("orch").innerHTML = `<span>対象ツール</span><span>${nT || "—"}</span><span>researcher 起動数</span><span>${nT || "—"} 並列</span>` +
+    `<span>スカウト</span><span>${run && run.scout ? "実行" : "なし"}</span>`;
+
+  // swarm
+  let cards;
+  if (exploring) {
+    const done = S.live.done || {};
+    const names = S.live.names || Array.from({ length: CFG.tools_per_day }, (_, i) => `researcher #${i + 1}`);
+    cards = names.map(n => agentCard(typeof done[n] === "object" ? done[n] : { target: n, status: done[n] || "run" }));
+  } else if (R.length) {
+    cards = R.map(agentCard);
+  } else cards = [`<div class="empty" style="grid-column:1/-1">まだ探索結果がありません</div>`];
+  const sc = A.find(a => a.role === "scout");
+  cards.push(agentCard(sc ? { ...sc, scout: true } : { target: "新ツール探索", scout: true, off: true }));
+  $("swarm").innerHTML = cards.join("");
+
+  // checker
+  const c = (run && run.counts) || {};
+  const nRev = A.filter(a => a.role === "reviewer").length;
+  const total = Math.max(1, R.length);
+  const ok = (c.first || 0) + (c.same || 0);
+  const failedR = R.filter(a => a.status === "failed").length;
+  const row = (label, n, cls) => `<div class="r ${cls}"><span>${label}</span><span class="t"><i style="width:${exploring ? 0 : Math.round(n / total * 100)}%"></i></span><em>${exploring ? "…" : n}</em></div>`;
+  $("checker").innerHTML = row("変化なし/初回", ok, "") + row("要レビュー", A.filter(a => a.role === "reviewer" && R.some(r => r.target === a.target)).length, "w") + row("調査失敗", failedR, "b");
+  $("checkerFoot").innerHTML = exploring || !run ? "" : `変化なしは <b>Sonnetを呼ばずに完了</b> · 料金変更 ${c.changed || 0} 件`;
+
+  // reviewer
+  const RV = A.filter(a => a.role === "reviewer");
+  $("reviews").innerHTML = exploring ? `<div class="empty">調査員の結果を待っています…</div>` :
+    RV.length ? RV.map(a => `<div class="rv"><span>${esc(a.target)}</span><span class="v ${esc(a.status)}">${esc(a.status)}</span>` +
+      `<span class="note">${esc(a.note)} · ${yen(a.cost_usd)}</span></div>`).join("")
+    : `<div class="empty">${run ? "今日は呼ばれていません(API代の節約)" : "—"}</div>`;
+
+  // PR
+  const pr = S.pr;
+  $("prSub").textContent = pr ? `PR #${pr.number} · ${pr.title}` : (S.phase === "published" ? "承認済み" : "承認待ちのPRはありません");
+  $("prKv").innerHTML = run && !exploring ? `<span>⚠ 料金変更</span><span>${c.changed || 0}</span><span>🆕 新規</span><span>${c.new || 0}</span>` +
+    `<span>初回 / 変化なし</span><span>${c.first || 0} / ${c.same || 0}</span><span>反映しない</span><span>${c.skipped || 0}</span>` : "";
+  $("prLink").innerHTML = pr && pr.html_url ? `<a href="${esc(pr.html_url)}" target="_blank" rel="noopener">GitHubで出典を確認 →</a>` : "";
+  const canApprove = S.phase === "awaiting";
+  $("bApprove").disabled = !canApprove; $("bReject").disabled = !canApprove;
+  $("bReject").classList.toggle("arm", armReject); $("bReject").textContent = armReject ? "本当に却下？" : "却下";
+  $("bExplore").disabled = exploring || S.phase === "deploying";
+  $("bExplore").textContent = exploring ? "◐ 探索中…" : "① 探索を開始";
+
+  $("deploy").innerHTML = S.phase === "deploying" ? `<span style="color:var(--code)">◑ building…</span>` :
+    S.deploy ? `${S.deploy.conclusion === "success" ? "✓ 公開済み" : esc(S.deploy.conclusion || S.deploy.status)} · ${esc((S.deploy.updated_at || "").slice(0, 16).replace("T", " "))}` +
+      (CFG.base_url ? ` · <a href="${esc(CFG.base_url)}" target="_blank" rel="noopener">サイトを開く</a>` : "") : "—";
+
+  // cost
+  if (run && run.totals && !exploring) {
+    const t = run.totals, base = run.baseline_all_sonnet_usd || 0;
+    const h = A.filter(a => /haiku/.test(a.model)).reduce((s, a) => s + a.cost_usd, 0);
+    const so = A.filter(a => /sonnet/.test(a.model)).reduce((s, a) => s + a.cost_usd, 0);
+    const srch = A.reduce((s, a) => s + a.searches, 0) * ((CFG.pricing && CFG.pricing.web_search_per_1000) || 10) / 1000;
+    const tok = Math.max(1e-9, h + so);
+    $("cost").textContent = yen(t.cost_usd);
+    $("split").innerHTML = `<i style="width:${h / tok * 100}%;background:var(--hai)"></i><i style="width:${so / tok * 100}%;background:var(--son)"></i>`;
+    $("costKv").innerHTML = `<span style="color:var(--hai)">haiku</span><span>${yen(h)}</span><span style="color:var(--son)">sonnet</span><span>${yen(so)}</span>` +
+      `<span>うち検索料 ${A.reduce((s, a) => s + a.searches, 0)} 回</span><span>${yen(srch)}</span><span>tokens in / out</span><span>${(t.in / 1000).toFixed(1)}k / ${(t.out / 1000).toFixed(1)}k</span>`;
+    $("save").textContent = base > 0 ? `全部Sonnetなら ${yen(base)} → ${Math.max(0, Math.round((1 - t.cost_usd / base) * 100))}% 節約(概算)` : "";
+  } else { $("cost").textContent = exploring ? "…" : "—"; $("split").innerHTML = ""; $("costKv").innerHTML = ""; $("save").textContent = ""; }
+
+  // log
+  const lines = exploring ? (S.live.log || []) : ((run && run.log) || []);
+  $("log").innerHTML = lines.map(l => `<div><span class="tm">${esc(l.t)}</span><span class="w ${esc(l.who)}">${esc(l.who)}</span><span>${esc(l.msg)}</span></div>`).join("") || `<div><span class="tm"></span><span></span><span style="color:var(--dim)">ログなし</span></div>`;
+  const lg = $("log"); lg.scrollTop = lg.scrollHeight;
+
+  // status line
+  const nDone = exploring ? Object.keys(S.live.done || {}).length : R.filter(a => a.status === "done").length;
+  $("status").innerHTML =
+    `<span class="cmd">~/ai-tool-lab $ <em>explore</em> --team haiku×${nT || CFG.tools_per_day} --review sonnet</span>` +
+    `<span>haiku <b class="h">[${exploring ? "swarming" : "idle"}]</b></span>` +
+    `<span>researchers <b class="h">[${nDone}/${nT || CFG.tools_per_day}]</b></span>` +
+    `<span>sonnet <b class="s">[${exploring ? "waiting" : nRev ? "reviewed " + nRev : "skipped"}]</b></span>` +
+    `<span>you <b class="y">[${S.phase === "awaiting" ? "approve?" : S.phase === "published" ? "done" : "—"}]</b></span>`;
+}
+
+function agentCard(a) {
+  if (a.off) return `<div class="ag scout off"><div class="n">scout</div><div class="m">Haiku 5.5</div><div class="pb"><span class="t"></span><span class="pc">—</span></div><div class="st">今回は休み</div><div class="meta">月曜 or チェックで実行</div></div>`;
+  const run = a.status === "run";
+  const failed = a.status === "failed";
+  const st = run ? `<span class="st run">◐ running</span>` : failed ? `<span class="st failed">✕ failed</span>` : `<span class="st done">✓ done</span>`;
+  const meta = run ? "&nbsp;" : failed ? esc(String(a.note || "").slice(0, 28)) :
+    `${((a.in || 0) / 1000).toFixed(1)}k tok · 検索${a.searches || 0} · ${yen(a.cost_usd || 0)}`;
+  return `<div class="ag${a.scout ? " scout" : ""}"><div class="n">${a.scout ? "scout" : esc(a.target)}</div><div class="m">Haiku 5.5</div>` +
+    `<div class="pb"><span class="t"><i class="f${run ? " run" : ""}" style="width:100%;${failed ? "background:var(--bad)" : ""}"></i></span><span class="pc">${run ? "" : "100%"}</span></div>` +
+    `${st}<div class="meta">${a.scout ? esc(a.note || "") + " · " : ""}${meta}</div></div>`;
+}
+
+// ---------- GitHub ----------
+async function gh(path, opt = {}) {
+  const tok = store.get();
+  const h = { Accept: "application/vnd.github+json", ...(opt.headers || {}) };
+  if (tok) h.Authorization = "Bearer " + tok;
+  const r = await fetch(path.startsWith("http") ? path : API + path, { ...opt, headers: h });
+  if (!r.ok) throw new Error(`GitHub ${r.status}`);
+  return r.status === 204 ? null : (opt.raw ? r.text() : r.json());
+}
+
+async function refresh() {
+  try {
+    const [ex, prs, dp] = await Promise.all([
+      gh("/actions/workflows/explore.yml/runs?per_page=1"),
+      gh("/pulls?state=open&per_page=10"),
+      gh("/actions/workflows/deploy.yml/runs?per_page=1"),
+    ]);
+    S.explore = ex.workflow_runs[0] || null;
+    S.deploy = dp.workflow_runs[0] || null;
+    S.pr = prs.find(p => (p.labels || []).some(l => l.name === "explore")) || null;
+    if (S.pr) {
+      try { S.run = JSON.parse(await gh(`/contents/data/run_latest.json?ref=${encodeURIComponent(S.pr.head.ref)}`, { raw: true, headers: { Accept: "application/vnd.github.raw+json" } })); } catch {}
+    } else S.run = CFG.run || S.run;
+    const exRunning = S.explore && S.explore.status !== "completed";
+    const dpRunning = S.deploy && S.deploy.status !== "completed";
+    S.phase = exRunning ? "exploring" : S.pr ? "awaiting" : dpRunning ? "deploying" :
+      (S.explore && S.explore.conclusion === "failure") ? "failed" :
+      (S.run && S.run.date === today()) ? "published" : "idle";
+  } catch (e) { toast("状態を取得できません: " + e.message); }
+  render();
+}
+const today = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+
+async function doExplore() {
+  if (DEMO) return demoExplore();
+  if (!store.get()) { window.open(`https://github.com/${CFG.repo}/actions/workflows/explore.yml`, "_blank", "noopener"); toast("GitHubで「Run workflow」を押してください"); return; }
+  try {
+    await gh("/actions/workflows/explore.yml/dispatches", { method: "POST", body: JSON.stringify({ ref: "main", inputs: { scout: $("cScout").checked ? "true" : "false" } }) });
+    S.phase = "exploring"; S.live = { log: [{ t: now(), who: "you", msg: "探索を開始しました" }] }; render(); toast("探索を開始しました");
+    setTimeout(refresh, 8000);
+  } catch (e) { toast("開始できませんでした: " + e.message); }
+}
+async function doApprove() {
+  if (DEMO) return demoApprove();
+  if (!S.pr) return;
+  if (!store.get()) { window.open(S.pr.html_url, "_blank", "noopener"); toast("GitHubで「Merge」を押してください"); return; }
+  try {
+    await gh(`/pulls/${S.pr.number}/merge`, { method: "PUT", body: JSON.stringify({ merge_method: "squash" }) });
+    S.pr = null; S.phase = "deploying"; render(); toast("承認しました。公開処理を開始します"); setTimeout(refresh, 8000);
+  } catch (e) { toast("承認できませんでした: " + e.message); }
+}
+async function doReject() {
+  if (!armReject) { armReject = true; render(); setTimeout(() => { armReject = false; render(); }, 4000); return; }
+  armReject = false;
+  if (DEMO) { S.pr = null; S.phase = "idle"; render(); toast("却下しました(何も公開されません)"); return; }
+  if (!store.get()) { window.open(S.pr.html_url, "_blank", "noopener"); toast("GitHubで「Close」を押してください"); return; }
+  try { await gh(`/pulls/${S.pr.number}`, { method: "PATCH", body: JSON.stringify({ state: "closed" }) }); S.pr = null; S.phase = "idle"; render(); toast("却下しました"); }
+  catch (e) { toast("却下できませんでした: " + e.message); }
+}
+const now = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(11, 19);
+
+// ---------- デモ ----------
+function demoExplore() {
+  const run = CFG.sample;
+  const R = run.agents.filter(a => a.role === "researcher");
+  S.phase = "exploring";
+  S.live = { targets: R.length, names: R.map(a => a.target), done: {}, log: [] };
+  const lines = run.log.slice(); let i = 0, j = 0;
+  render();
+  const tick = setInterval(() => {
+    if (j < R.length && Math.random() < .7) { S.live.done[R[j].target] = R[j]; j++; }
+    if (i < lines.length) S.live.log.push({ ...lines[i++], t: now() });
+    render();
+    if (i >= lines.length && j >= R.length) {
+      clearInterval(tick);
+      S.run = run; S.pr = { number: 12, title: `【承認待ち】探索結果 ${run.date}`, html_url: "" }; S.phase = "awaiting"; render();
+    }
+  }, 520);
+}
+function demoApprove() {
+  S.pr = null; S.phase = "deploying"; render();
+  setTimeout(() => { S.phase = "published"; S.deploy = { conclusion: "success", updated_at: new Date().toISOString() }; render(); toast("公開しました(デモ)"); }, 2200);
+}
+
+// ---------- 起動 ----------
+$("bExplore").onclick = doExplore; $("bApprove").onclick = doApprove; $("bReject").onclick = doReject;
+$("bSave").onclick = () => { store.set($("tok").value.trim()); $("tok").value = ""; toast("保存しました"); refresh(); };
+$("bClear").onclick = () => { store.set(""); toast("削除しました"); };
+$("path").textContent = `~/${(CFG.repo || "ai-tool-lab").split("/").pop()} · dashboard`;
+if (DEMO) {
+  $("demo").hidden = false; $("settings").hidden = true;
+  S.run = CFG.sample; S.pr = { number: 12, title: `【承認待ち】探索結果 ${CFG.sample.date}`, html_url: "" }; S.phase = "awaiting";
+  render();
+} else {
+  render(); refresh();
+  // トークンなしはGitHub APIの上限(60回/時)に収まるよう2分おき
+  setInterval(() => { if (!document.hidden) refresh(); }, store.get() ? 20000 : 120000);
+}
+})();
+</script>
+</body>
+</html>
