@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://api.github.com; base-uri 'none'; form-action 'none'">
 <title>dashboard · AIツール料金ウォッチ</title>
 <style>
 :root{
@@ -54,6 +55,7 @@ html,body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.55 var(--mon
 .rows .r.w .t i{background:var(--son)}.rows .r.b .t i{background:var(--bad)}
 .rows .r em{font-style:normal;text-align:right}
 .foot{margin-top:6px;font-size:11.5px;color:var(--mut)}.foot b{color:var(--code)}
+.evidence{overflow-wrap:anywhere}.evidence ul{padding-left:18px}.evidence li{margin:5px 0}.evidence a{display:inline-block;padding:5px 8px}
 .rv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:4px 0;padding:5px 0;border-top:1px dashed var(--line)}
 .rv:first-of-type{border-top:0}.rv .v{font-weight:700}.rv .note{grid-column:1/-1;color:var(--mut);font-size:11.5px}
 .v.confirm{color:var(--code)}.v.correct{color:var(--warn)}.v.reject,.v.failed{color:var(--bad)}
@@ -93,15 +95,16 @@ a{color:var(--hai)}
 <div class="win">
   <div class="bar"><i class="dot" style="background:#ff5f57"></i><i class="dot" style="background:#febc2e"></i><i class="dot" style="background:#28c840"></i><span id="path">~/ai-tool-lab · dashboard</span></div>
   <div class="wrap">
-    <div class="head">AI TOOL WATCH<i>·</i><span class="h">HAIKU 5.5</span> SWARMS<i>·</i><span class="s">SONNET 5.5</span> REVIEWS</div>
+    <div class="head">AI TOOL WATCH<i>·</i><span class="h">GPT-6 LUNA</span> SWARMS<i>·</i><span class="s">GPT-6.1 SOL</span> REVIEWS</div>
     <div class="legend">
-      <span><b style="background:var(--hai)"></b>haiku · researchers</span>
-      <span><b style="background:var(--son)"></b>sonnet · reviewer</span>
+      <span><b style="background:var(--hai)"></b>Luna · researchers</span>
+      <span><b style="background:var(--son)"></b>Sol · reviewer</span>
       <span><b style="background:var(--code)"></b>code · free</span>
       <span><b style="background:var(--you)"></b>you · approve</span>
     </div>
     <div id="demo" class="demo" hidden>DEMO MODE — 画面はサンプルデータです。ボタンを押すと流れを再現します</div>
-    <div class="phase"><span class="p" id="phase">—</span><span class="d" id="phaseD"></span></div>
+    <div class="phase"><span class="p" id="phase">—</span><span class="d" id="phaseD" aria-live="polite"></span></div>
+    <div class="foot" id="actionLinks" style="text-align:right"></div>
 
     <div class="box you" style="margin-top:12px">
       <h3>YOU · 08:00</h3><div class="sub">探索をはじめる</div>
@@ -110,11 +113,22 @@ a{color:var(--hai)}
     </div>
     <div class="link"><i class="v"></i><span class="arr">▼</span></div>
 
+    <div class="box you"><h3>YOU · 12:00</h3><div class="sub" id="prSub">承認して公開</div>
+      <div class="kv" id="prKv"></div>
+      <div class="evidence" id="evidence"></div>
+      <div class="two">
+        <button class="btn ok" id="bApprove">② 承認して公開</button>
+        <button class="btn ng" id="bReject">却下</button>
+      </div>
+      <div class="foot" id="prLink" style="text-align:center"></div>
+    </div>
+    <div class="link"><i class="v"></i><span class="arr">▼</span></div>
+
     <div class="box code"><h3>ORCHESTRATOR · code</h3>
       <div class="sub">API代 0円 · 確認日が古い順に対象を選ぶ</div>
       <div class="kv" id="orch"></div>
     </div>
-    <div class="link"><i class="v"></i><span class="lbl">delegate to researchers · <b>haiku 5.5</b> · 公式ドメインのみ検索</span><i class="v"></i><span class="arr">▼</span></div>
+    <div class="link"><i class="v"></i><span class="lbl">delegate to researchers · <b>GPT-6 Luna</b> · 公式ドメインのみ検索</span><i class="v"></i><span class="arr">▼</span></div>
 
     <div class="swarm" id="swarm"></div>
     <div class="link"><i class="v"></i><span class="arr">▼</span></div>
@@ -124,21 +138,11 @@ a{color:var(--hai)}
       <div class="rows" id="checker"></div>
       <div class="foot" id="checkerFoot"></div>
     </div>
-    <div class="link"><i class="v"></i><span class="lbl">変更・新規・自信なし だけ → <b class="s">sonnet 5.5</b></span><i class="v"></i><span class="arr">▼</span></div>
+    <div class="link"><i class="v"></i><span class="lbl">初回・変更・新規・要確認 → <b class="s">GPT-6.1 Sol</b></span><i class="v"></i><span class="arr">▼</span></div>
 
-    <div class="box son"><h3>REVIEWER · Sonnet 5.5</h3>
+    <div class="box son"><h3>REVIEWER · GPT-6.1 Sol</h3>
       <div class="sub">独立に再調査して confirm / correct / reject</div>
       <div id="reviews"></div>
-    </div>
-    <div class="link"><i class="v"></i><span class="arr">▼</span></div>
-
-    <div class="box you"><h3>YOU · 12:00</h3><div class="sub" id="prSub">承認して公開</div>
-      <div class="kv" id="prKv"></div>
-      <div class="two">
-        <button class="btn ok" id="bApprove">② 承認して公開</button>
-        <button class="btn ng" id="bReject">却下</button>
-      </div>
-      <div class="foot" id="prLink" style="text-align:center"></div>
     </div>
     <div class="link"><i class="v"></i><span class="arr">▼</span></div>
 
@@ -154,7 +158,8 @@ a{color:var(--hai)}
     <div class="panel"><span class="tt">session log</span><div class="log" id="log"></div></div>
 
     <details id="settings"><summary>設定(GitHubトークン)</summary>
-      <p>ボタンをこの画面から直接動かすには、GitHubの fine-grained token(このリポジトリだけ、権限は Actions・Contents・Pull requests を Read and write)を入れてください。トークンはこのブラウザの中だけに保存され、サイトには送られません。未設定のときはボタンでGitHubの該当画面が開きます。</p>
+      <p>このリポジトリのみの fine-grained token（Actions・Contents・Pull requests の Read and write）で直接操作できます。トークンはこのタブのセッションに保存され、GitHub API のみに送信されます。未設定の場合はGitHubの画面が開きます。</p>
+      <div id="tokStatus" aria-live="polite"></div>
       <input id="tok" type="password" placeholder="github_pat_..." autocomplete="off">
       <button class="btn ng" id="bSave">保存</button>
       <button class="btn ng" id="bClear">削除</button>
@@ -174,11 +179,18 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const RATE = (CFG.pricing && CFG.pricing.usd_jpy) || 150;
 const DEMO = /YOUR_GITHUB_NAME/.test(CFG.repo || "") || /[?&]demo/.test(location.search);
 const API = "https://api.github.com/repos/" + CFG.repo;
-const store = { get(){ try { return localStorage.getItem("gh_token") || ""; } catch { return ""; } },
-                set(v){ try { v ? localStorage.setItem("gh_token", v) : localStorage.removeItem("gh_token"); } catch {} } };
+const REPO = "https://github.com/" + CFG.repo;
+const TOKEN_KEY = `github-token:${CFG.repo}`;
+const token = () => { try { return sessionStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; } };
 
 let S = { phase: "idle", run: CFG.run || null, pr: null, explore: null, deploy: null, live: {} };
-let armReject = false;
+let armedHead = "";
+let busy = false;
+let refreshing = false;
+let dispatch = null;
+let publishing = null;
+let shownHead = "";
+let latestPublished = { sha: "", run: CFG.run || null };
 
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = "none", 3200); }
 const yen = usd => "¥" + (usd * RATE).toLocaleString("ja-JP", { maximumFractionDigits: usd * RATE < 10 ? 1 : 0 });
@@ -188,9 +200,24 @@ const PH = {
   exploring:["◐ 探索中", "var(--hai)", "AIチームが調査しています(数分〜15分)"],
   awaiting: ["◆ 承認待ち", "var(--you)", "結果を確認して ② を押すと公開されます"],
   deploying:["◑ 公開中", "var(--code)", "サイトを再生成しています"],
-  published:["✓ 公開済み", "var(--code)", "今日の作業は完了です"],
+  published:["✓ 公開済み", "var(--code)", "GitHub Pages への反映が完了しました"],
   failed:   ["✕ 探索失敗", "var(--bad)", "GitHub Actions のログを確認してください"],
+  deployFailed:["✕ 公開を確認できません", "var(--bad)", "公開ワークフローの結果を確認してください"],
+  checked:  ["● 探索完了", "var(--mut)", "承認待ちのPRはありません"],
 };
+
+function evidence(items) {
+  return [["料金・無料枠の変更", "changed"], ["新規ツール", "new"], ["料金の初回掲載", "first"]].map(([label, key]) => {
+    const rows = items[key] || [];
+    if (!rows.length) return "";
+    return `<h4>${label}</h4><ul>${rows.map(item => {
+      const sources = (item.sources || []).filter(url => /^https:\/\//i.test(url));
+      return `<li><b>${esc(item.name)}</b> ${esc(item.plans)}<br>無料枠 ${esc(item.free_tier || "なし")}` +
+        `${item.detail ? `<br>${esc(item.detail)}` : ""}<br>${sources.map((url, i) =>
+          `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">出典${i + 1}</a>`).join("")}</li>`;
+    }).join("")}</ul>`;
+  }).join("");
+}
 
 function render() {
   const run = S.run, A = (run && run.agents) || [];
@@ -198,6 +225,8 @@ function render() {
   const [p, col, d] = PH[S.phase] || PH.idle;
   $("phase").textContent = p; $("phase").style.color = col;
   $("phaseD").textContent = run && !exploring ? `${d} · 最終探索 ${run.date}` : d;
+  $("actionLinks").innerHTML = !DEMO && S.explore ?
+    `<a href="${REPO}/actions/runs/${S.explore.id}" rel="noopener" target="_blank">探索の実行結果</a>` : "";
 
   // orchestrator
   const R = A.filter(a => a.role === "researcher");
@@ -226,7 +255,7 @@ function render() {
   const failedR = R.filter(a => a.status === "failed").length;
   const row = (label, n, cls) => `<div class="r ${cls}"><span>${label}</span><span class="t"><i style="width:${exploring ? 0 : Math.round(n / total * 100)}%"></i></span><em>${exploring ? "…" : n}</em></div>`;
   $("checker").innerHTML = row("変化なし/初回", ok, "") + row("要レビュー", A.filter(a => a.role === "reviewer" && R.some(r => r.target === a.target)).length, "w") + row("調査失敗", failedR, "b");
-  $("checkerFoot").innerHTML = exploring || !run ? "" : `変化なしは <b>Sonnetを呼ばずに完了</b> · 料金変更 ${c.changed || 0} 件`;
+  $("checkerFoot").innerHTML = exploring || !run ? "" : `変化なしは <b>Solを呼ばずに完了</b> · 料金変更 ${c.changed || 0} 件`;
 
   // reviewer
   const RV = A.filter(a => a.role === "reviewer");
@@ -237,32 +266,38 @@ function render() {
 
   // PR
   const pr = S.pr;
+  const detailsReady = DEMO || (pr && shownHead === pr.head.sha);
   $("prSub").textContent = pr ? `PR #${pr.number} · ${pr.title}` : (S.phase === "published" ? "承認済み" : "承認待ちのPRはありません");
-  $("prKv").innerHTML = run && !exploring ? `<span>⚠ 料金変更</span><span>${c.changed || 0}</span><span>🆕 新規</span><span>${c.new || 0}</span>` +
+  $("prKv").innerHTML = pr && run && detailsReady ? `<span>料金・無料枠の変更</span><span>${c.changed || 0}</span><span>新規</span><span>${c.new || 0}</span>` +
     `<span>初回 / 変化なし</span><span>${c.first || 0} / ${c.same || 0}</span><span>反映しない</span><span>${c.skipped || 0}</span>` : "";
-  $("prLink").innerHTML = pr && pr.html_url ? `<a href="${esc(pr.html_url)}" target="_blank" rel="noopener">GitHubで出典を確認 →</a>` : "";
-  const canApprove = S.phase === "awaiting";
+  $("evidence").innerHTML = pr && detailsReady ? evidence(run?.items || {}) : "";
+  $("prLink").innerHTML = pr && !DEMO ? `<a href="${REPO}/pull/${pr.number}" target="_blank" rel="noopener">GitHubで出典と差分を確認 →</a>` : "";
+  const canApprove = S.phase === "awaiting" && !busy && (!token() || detailsReady);
   $("bApprove").disabled = !canApprove; $("bReject").disabled = !canApprove;
-  $("bReject").classList.toggle("arm", armReject); $("bReject").textContent = armReject ? "本当に却下？" : "却下";
-  $("bExplore").disabled = exploring || S.phase === "deploying";
+  const armed = !!pr && armedHead === (DEMO ? "demo" : pr.head.sha);
+  $("bReject").classList.toggle("arm", armed); $("bReject").textContent = armed ? "本当に却下？" : "却下";
+  $("bExplore").disabled = busy || exploring || S.phase === "deploying";
   $("bExplore").textContent = exploring ? "◐ 探索中…" : "① 探索を開始";
 
   $("deploy").innerHTML = S.phase === "deploying" ? `<span style="color:var(--code)">◑ building…</span>` :
-    S.deploy ? `${S.deploy.conclusion === "success" ? "✓ 公開済み" : esc(S.deploy.conclusion || S.deploy.status)} · ${esc((S.deploy.updated_at || "").slice(0, 16).replace("T", " "))}` +
-      (CFG.base_url ? ` · <a href="${esc(CFG.base_url)}" target="_blank" rel="noopener">サイトを開く</a>` : "") : "—";
+    S.deploy ? `${S.deploy.conclusion === "success" ? "✓ 公開済み" : esc(S.deploy.conclusion || S.deploy.status)}` +
+      (!DEMO ? ` · <a href="${REPO}/actions/runs/${S.deploy.id}" target="_blank" rel="noopener">公開の実行結果</a>` : "") +
+      (CFG.base_url ? ` · <a href="${esc(CFG.base_url)}" target="_blank" rel="noopener">サイトを開く</a>` : "") :
+      S.phase === "deployFailed" ? `<a href="${REPO}/actions/workflows/deploy.yml" target="_blank" rel="noopener">公開の実行結果</a>` : "—";
 
   // cost
   if (run && run.totals && !exploring) {
-    const t = run.totals, base = run.baseline_all_sonnet_usd || 0;
-    const h = A.filter(a => /haiku/.test(a.model)).reduce((s, a) => s + a.cost_usd, 0);
-    const so = A.filter(a => /sonnet/.test(a.model)).reduce((s, a) => s + a.cost_usd, 0);
+    const t = run.totals, base = run.baseline_all_reviewer_usd || 0;
+    const h = A.filter(a => a.role !== "reviewer").reduce((s, a) => s + a.cost_usd, 0);
+    const so = A.filter(a => a.role === "reviewer").reduce((s, a) => s + a.cost_usd, 0);
     const srch = A.reduce((s, a) => s + a.searches, 0) * ((CFG.pricing && CFG.pricing.web_search_per_1000) || 10) / 1000;
     const tok = Math.max(1e-9, h + so);
     $("cost").textContent = yen(t.cost_usd);
     $("split").innerHTML = `<i style="width:${h / tok * 100}%;background:var(--hai)"></i><i style="width:${so / tok * 100}%;background:var(--son)"></i>`;
-    $("costKv").innerHTML = `<span style="color:var(--hai)">haiku</span><span>${yen(h)}</span><span style="color:var(--son)">sonnet</span><span>${yen(so)}</span>` +
+    $("costKv").innerHTML = `<span style="color:var(--hai)">調査・スカウト</span><span>${yen(h)}</span><span style="color:var(--son)">再確認</span><span>${yen(so)}</span>` +
       `<span>うち検索料 ${A.reduce((s, a) => s + a.searches, 0)} 回</span><span>${yen(srch)}</span><span>tokens in / out</span><span>${(t.in / 1000).toFixed(1)}k / ${(t.out / 1000).toFixed(1)}k</span>`;
-    $("save").textContent = base > 0 ? `全部Sonnetなら ${yen(base)} → ${Math.max(0, Math.round((1 - t.cost_usd / base) * 100))}% 節約(概算)` : "";
+    $("save").textContent = t.unmetered ? `使用量を取得できなかった応答 ${t.unmetered} 件は概算に含みません` :
+      base > 0 ? `全件Solの単価で同じ使用量を換算すると ${yen(base)}` : "";
   } else { $("cost").textContent = exploring ? "…" : "—"; $("split").innerHTML = ""; $("costKv").innerHTML = ""; $("save").textContent = ""; }
 
   // log
@@ -273,83 +308,158 @@ function render() {
   // status line
   const nDone = exploring ? Object.keys(S.live.done || {}).length : R.filter(a => a.status === "done").length;
   $("status").innerHTML =
-    `<span class="cmd">~/ai-tool-lab $ <em>explore</em> --team haiku×${nT || CFG.tools_per_day} --review sonnet</span>` +
-    `<span>haiku <b class="h">[${exploring ? "swarming" : "idle"}]</b></span>` +
+    `<span class="cmd">~/ai-tool-lab $ <em>explore</em> --team luna×${nT || CFG.tools_per_day} --review sol</span>` +
+    `<span>Luna <b class="h">[${exploring ? "swarming" : "idle"}]</b></span>` +
     `<span>researchers <b class="h">[${nDone}/${nT || CFG.tools_per_day}]</b></span>` +
-    `<span>sonnet <b class="s">[${exploring ? "waiting" : nRev ? "reviewed " + nRev : "skipped"}]</b></span>` +
+    `<span>Sol <b class="s">[${exploring ? "waiting" : nRev ? "reviewed " + nRev : "skipped"}]</b></span>` +
     `<span>you <b class="y">[${S.phase === "awaiting" ? "approve?" : S.phase === "published" ? "done" : "—"}]</b></span>`;
 }
 
 function agentCard(a) {
-  if (a.off) return `<div class="ag scout off"><div class="n">scout</div><div class="m">Haiku 5.5</div><div class="pb"><span class="t"></span><span class="pc">—</span></div><div class="st">今回は休み</div><div class="meta">月曜 or チェックで実行</div></div>`;
+  if (a.off) return `<div class="ag scout off"><div class="n">scout</div><div class="m">GPT-6 Luna</div><div class="pb"><span class="t"></span><span class="pc">—</span></div><div class="st">今回は休み</div><div class="meta">月曜 or チェックで実行</div></div>`;
   const run = a.status === "run";
   const failed = a.status === "failed";
   const st = run ? `<span class="st run">◐ running</span>` : failed ? `<span class="st failed">✕ failed</span>` : `<span class="st done">✓ done</span>`;
   const meta = run ? "&nbsp;" : failed ? esc(String(a.note || "").slice(0, 28)) :
     `${((a.in || 0) / 1000).toFixed(1)}k tok · 検索${a.searches || 0} · ${yen(a.cost_usd || 0)}`;
-  return `<div class="ag${a.scout ? " scout" : ""}"><div class="n">${a.scout ? "scout" : esc(a.target)}</div><div class="m">Haiku 5.5</div>` +
+  return `<div class="ag${a.scout ? " scout" : ""}"><div class="n">${a.scout ? "scout" : esc(a.target)}</div><div class="m">${esc(a.model || "GPT-6 Luna")}</div>` +
     `<div class="pb"><span class="t"><i class="f${run ? " run" : ""}" style="width:100%;${failed ? "background:var(--bad)" : ""}"></i></span><span class="pc">${run ? "" : "100%"}</span></div>` +
     `${st}<div class="meta">${a.scout ? esc(a.note || "") + " · " : ""}${meta}</div></div>`;
 }
 
 // ---------- GitHub ----------
 async function gh(path, opt = {}) {
-  const tok = store.get();
-  const h = { Accept: "application/vnd.github+json", ...(opt.headers || {}) };
+  const h = { Accept: "application/vnd.github+json" };
+  const tok = token();
   if (tok) h.Authorization = "Bearer " + tok;
-  const r = await fetch(path.startsWith("http") ? path : API + path, { ...opt, headers: h });
+  const {body, method = "GET"} = opt;
+  if (body) h["Content-Type"] = "application/json";
+  const r = await fetch(API + path, { method, body: body && JSON.stringify(body), headers: h, redirect: "error" });
   if (!r.ok) throw new Error(`GitHub ${r.status}`);
-  return r.status === 204 ? null : (opt.raw ? r.text() : r.json());
+  const text = await r.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function runAt(sha) {
+  const file = await gh(`/contents/data/run_latest.json?ref=${encodeURIComponent(sha)}`);
+  const bytes = Uint8Array.from(atob(file.content), c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
 }
 
 async function refresh() {
+  if (refreshing || busy) return;
+  refreshing = true;
   try {
     const [ex, prs, dp] = await Promise.all([
-      gh("/actions/workflows/explore.yml/runs?per_page=1"),
-      gh("/pulls?state=open&per_page=10"),
-      gh("/actions/workflows/deploy.yml/runs?per_page=1"),
+      gh("/actions/workflows/explore.yml/runs?branch=main&per_page=1"),
+      gh("/pulls?state=open&base=main&sort=created&direction=desc&per_page=30"),
+      gh("/actions/workflows/deploy.yml/runs?branch=main&per_page=5"),
     ]);
     S.explore = ex.workflow_runs[0] || null;
-    S.deploy = dp.workflow_runs[0] || null;
-    S.pr = prs.find(p => (p.labels || []).some(l => l.name === "explore")) || null;
-    if (S.pr) {
-      try { S.run = JSON.parse(await gh(`/contents/data/run_latest.json?ref=${encodeURIComponent(S.pr.head.ref)}`, { raw: true, headers: { Accept: "application/vnd.github.raw+json" } })); } catch {}
-    } else S.run = CFG.run || S.run;
-    const exRunning = S.explore && S.explore.status !== "completed";
-    const dpRunning = S.deploy && S.deploy.status !== "completed";
-    S.phase = exRunning ? "exploring" : S.pr ? "awaiting" : dpRunning ? "deploying" :
-      (S.explore && S.explore.conclusion === "failure") ? "failed" :
-      (S.run && S.run.date === today()) ? "published" : "idle";
+    S.deploy = (publishing ? dp.workflow_runs.find(r => r.head_sha === publishing.sha) : dp.workflow_runs[0]) || null;
+    const pr = prs.find(p => p.user?.login === "github-actions[bot]" && p.head?.ref.startsWith("explore/") &&
+      p.head.repo?.full_name === CFG.repo && (p.labels || []).some(l => l.name === "explore")) || null;
+    if (pr && shownHead !== pr.head.sha) {
+      shownHead = "";
+      try {
+        S.run = await runAt(pr.head.sha);
+        shownHead = pr.head.sha;
+      } catch { S.run = null; }
+    }
+    S.pr = pr;
+    if (!pr) {
+      shownHead = "";
+      if (S.deploy?.conclusion === "success" && latestPublished.sha !== S.deploy.head_sha) {
+        latestPublished = {sha: S.deploy.head_sha, run: CFG.run || null};
+        try { latestPublished.run = await runAt(latestPublished.sha); } catch {}
+      }
+      S.run = latestPublished.run;
+    }
+    if (dispatch && (S.explore?.id !== dispatch.previous || Date.now() - dispatch.at > 60000)) dispatch = null;
+    const exRunning = dispatch || (S.explore && S.explore.status !== "completed");
+    const waitingForDeploy = publishing && !S.deploy;
+    const deployMissing = waitingForDeploy && Date.now() - publishing.at > 120000;
+    const dpRunning = (waitingForDeploy && !deployMissing) || (S.deploy && S.deploy.status !== "completed");
+    const published = S.deploy?.conclusion === "success" && String(S.explore?.id) === S.run?.workflow_run_id;
+    if (publishing && S.deploy?.status === "completed") publishing = null;
+    S.phase = exRunning ? "exploring" : pr ? "awaiting" : dpRunning ? "deploying" :
+      (S.explore?.status === "completed" && S.explore.conclusion !== "success") ? "failed" :
+      (deployMissing || (S.deploy?.status === "completed" && S.deploy.conclusion !== "success")) ? "deployFailed" :
+      published ? "published" : S.explore ? "checked" : "idle";
   } catch (e) { toast("状態を取得できません: " + e.message); }
-  render();
+  finally { refreshing = false; render(); }
 }
-const today = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 
 async function doExplore() {
   if (DEMO) return demoExplore();
-  if (!store.get()) { window.open(`https://github.com/${CFG.repo}/actions/workflows/explore.yml`, "_blank", "noopener"); toast("GitHubで「Run workflow」を押してください"); return; }
+  if (!token()) {
+    window.open(`${REPO}/actions/workflows/explore.yml`, "_blank", "noopener");
+    toast("GitHubのRun workflowで探索を開始してください");
+    return;
+  }
+  if (busy || dispatch) return;
+  busy = true;
+  render();
   try {
-    await gh("/actions/workflows/explore.yml/dispatches", { method: "POST", body: JSON.stringify({ ref: "main", inputs: { scout: $("cScout").checked ? "true" : "false" } }) });
-    S.phase = "exploring"; S.live = { log: [{ t: now(), who: "you", msg: "探索を開始しました" }] }; render(); toast("探索を開始しました");
-    setTimeout(refresh, 8000);
+    await gh("/actions/workflows/explore.yml/dispatches", { method: "POST", body: {
+      ref: "main", inputs: { scout: $("cScout").checked ? "true" : "false" },
+    } });
+    dispatch = {at: Date.now(), previous: S.explore?.id};
+    S.phase = "exploring";
+    S.live = { log: [{ t: now(), who: "you", msg: "探索を開始しました" }] };
+    setTimeout(refresh, 7000);
   } catch (e) { toast("開始できませんでした: " + e.message); }
+  finally { busy = false; render(); }
 }
 async function doApprove() {
   if (DEMO) return demoApprove();
-  if (!S.pr) return;
-  if (!store.get()) { window.open(S.pr.html_url, "_blank", "noopener"); toast("GitHubで「Merge」を押してください"); return; }
+  const pr = S.pr;
+  if (!pr || busy) return;
+  if (!token()) {
+    window.open(`${REPO}/pull/${pr.number}`, "_blank", "noopener");
+    return;
+  }
+  if (shownHead !== pr.head.sha) return;
+  busy = true;
+  render();
   try {
-    await gh(`/pulls/${S.pr.number}/merge`, { method: "PUT", body: JSON.stringify({ merge_method: "squash" }) });
-    S.pr = null; S.phase = "deploying"; render(); toast("承認しました。公開処理を開始します"); setTimeout(refresh, 8000);
-  } catch (e) { toast("承認できませんでした: " + e.message); }
+    const merged = await gh(`/pulls/${pr.number}/merge`, {
+      method: "PUT", body: { sha: shownHead, merge_method: "squash" },
+    });
+    if (!merged?.merged || !merged.sha) throw new Error("GitHub側でマージできませんでした");
+    publishing = {sha: merged.sha, at: Date.now()};
+    S.pr = null;
+    S.phase = "deploying";
+    toast("承認しました。公開処理を開始します");
+    setTimeout(refresh, 7000);
+  } catch (e) {
+    toast("承認できませんでした: " + e.message);
+    setTimeout(refresh, 1000);
+  }
+  finally { busy = false; render(); }
 }
 async function doReject() {
-  if (!armReject) { armReject = true; render(); setTimeout(() => { armReject = false; render(); }, 4000); return; }
-  armReject = false;
-  if (DEMO) { S.pr = null; S.phase = "idle"; render(); toast("却下しました(何も公開されません)"); return; }
-  if (!store.get()) { window.open(S.pr.html_url, "_blank", "noopener"); toast("GitHubで「Close」を押してください"); return; }
-  try { await gh(`/pulls/${S.pr.number}`, { method: "PATCH", body: JSON.stringify({ state: "closed" }) }); S.pr = null; S.phase = "idle"; render(); toast("却下しました"); }
-  catch (e) { toast("却下できませんでした: " + e.message); }
+  if (!S.pr || busy) return;
+  const head = DEMO ? "demo" : S.pr.head.sha;
+  if (armedHead !== head) {
+    armedHead = head;
+    render();
+    setTimeout(() => { if (armedHead === head) { armedHead = ""; render(); } }, 4000);
+    return;
+  }
+  armedHead = "";
+  if (DEMO) { S.pr = null; S.phase = "idle"; render(); toast("却下しました"); return; }
+  if (!token()) { window.open(`${REPO}/pull/${S.pr.number}`, "_blank", "noopener"); render(); return; }
+  busy = true;
+  render();
+  try {
+    await gh(`/pulls/${S.pr.number}`, { method: "PATCH", body: { state: "closed" } });
+    S.pr = null;
+    shownHead = "";
+    S.phase = "checked";
+    toast("却下しました");
+  } catch (e) { toast("却下できませんでした: " + e.message); }
+  finally { busy = false; render(); }
 }
 const now = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(11, 19);
 
@@ -378,17 +488,35 @@ function demoApprove() {
 
 // ---------- 起動 ----------
 $("bExplore").onclick = doExplore; $("bApprove").onclick = doApprove; $("bReject").onclick = doReject;
-$("bSave").onclick = () => { store.set($("tok").value.trim()); $("tok").value = ""; toast("保存しました"); refresh(); };
-$("bClear").onclick = () => { store.set(""); toast("削除しました"); };
+function updateToken(value) {
+  try {
+    if (value) sessionStorage.setItem(TOKEN_KEY, value);
+    else sessionStorage.removeItem(TOKEN_KEY);
+    $("tok").value = "";
+    $("tokStatus").textContent = value ? "このタブで有効です" : "GitHubの画面で操作します";
+    render();
+    refresh();
+  } catch { toast("このブラウザではトークンを保存できません"); }
+}
+$("bSave").onclick = () => {
+  const value = $("tok").value.trim();
+  if (value.startsWith("github_pat_")) updateToken(value);
+  else toast("fine-grained tokenを入力してください");
+};
+$("bClear").onclick = () => updateToken("");
 $("path").textContent = `~/${(CFG.repo || "ai-tool-lab").split("/").pop()} · dashboard`;
 if (DEMO) {
   $("demo").hidden = false; $("settings").hidden = true;
   S.run = CFG.sample; S.pr = { number: 12, title: `【承認待ち】探索結果 ${CFG.sample.date}`, html_url: "" }; S.phase = "awaiting";
   render();
 } else {
-  render(); refresh();
-  // トークンなしはGitHub APIの上限(60回/時)に収まるよう2分おき
-  setInterval(() => { if (!document.hidden) refresh(); }, store.get() ? 20000 : 120000);
+  try { localStorage.removeItem("gh_token"); } catch {}
+  $("tokStatus").textContent = token() ? "このタブで有効です" : "GitHubの画面で操作します";
+  render();
+  refresh();
+  function poll() { setTimeout(async () => { if (!document.hidden) await refresh(); poll(); }, token() ? 20000 : 300000); }
+  poll();
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
 }
 })();
 </script>

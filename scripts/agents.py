@@ -1,79 +1,138 @@
-"""Claude API の薄いクライアントと料金計算(標準ライブラリのみ)。"""
+"""OpenAI Responses API と使用量の集計。Python の標準ライブラリのみ。"""
 import json
 import re
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import parse_qsl, urlsplit
 
-API_URL = "https://api.anthropic.com/v1/messages"
+API_URL = "https://api.openai.com/v1/responses"
 
 
 class AgentError(Exception):
-    pass
+    def __init__(self, message, usage=None, unmetered=False):
+        super().__init__(message)
+        self.usage = usage
+        self.unmetered = unmetered
 
 
-def web_search_tool(max_uses, domains=None):
-    tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": max_uses}
-    if domains:
-        tool["allowed_domains"] = domains
-    return tool
-
-
-def call(api_key, model, system, prompt, tools=None, max_tokens=4000):
-    """1エージェント分の呼び出し。pause_turn を処理し、テキストと使用量を返す。"""
-    messages = [{"role": "user", "content": prompt}]
-    usage = {"in": 0, "out": 0, "cache_read": 0, "searches": 0, "requests": []}
-    text = ""
-    for _ in range(6):
-        body = {"model": model, "max_tokens": max_tokens, "system": system, "messages": messages}
-        if tools:
-            body["tools"] = tools
-        req = urllib.request.Request(API_URL, data=json.dumps(body).encode(), headers={
-            "x-api-key": api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-        for attempt in range(3):
-            try:
-                with urllib.request.urlopen(req, timeout=600) as r:
-                    resp = json.loads(r.read())
-                break
-            except urllib.error.HTTPError as e:
-                if e.code in (429, 500, 529) and attempt < 2:
-                    time.sleep(10 * (attempt + 1))
-                    continue
-                raise AgentError(f"HTTP {e.code}: {e.read().decode(errors='replace')[:300]}")
-            except urllib.error.URLError as e:
-                raise AgentError(str(e))
-        u = resp.get("usage", {})
-        req_in = u.get("input_tokens", 0) + u.get("cache_creation_input_tokens", 0)
-        usage["in"] += req_in
-        usage["out"] += u.get("output_tokens", 0)
-        usage["cache_read"] += u.get("cache_read_input_tokens", 0)
-        usage["searches"] += (u.get("server_tool_use") or {}).get("web_search_requests", 0)
-        usage["requests"].append({"in": req_in, "out": u.get("output_tokens", 0),
-                                  "cache_read": u.get("cache_read_input_tokens", 0)})
-        text += "".join(b.get("text", "") for b in resp.get("content", []) if b.get("type") == "text")
-        if resp.get("stop_reason") != "pause_turn":
-            break
-        messages.append({"role": "assistant", "content": resp["content"]})
-    return text, usage
-
-
-def parse_json(text):
-    m = re.findall(r"```json\s*(\{.*?\})\s*```", text, re.S)
-    raw = m[-1] if m else text[text.find("{"): text.rfind("}") + 1]
+def url_key(url):
+    """公式の HTTPS URL を比較するキー。フラグメントや追跡パラメーターは無視する。"""
+    if not isinstance(url, str) or len(url) > 2000 or re.search(r"[\s\x00-\x1f<>\\]", url):
+        return None
     try:
-        return json.loads(raw)
-    except json.JSONDecodeError as e:
-        raise AgentError(f"JSONを読めませんでした: {e}")
+        parts = urlsplit(url)
+        host = parts.hostname or ""
+        if (parts.scheme != "https" or parts.netloc.lower() not in (host, host + ":443")
+                or not re.fullmatch(r"[a-z0-9-]+(?:\.[a-z0-9-]+)+", host)):
+            return None
+    except ValueError:
+        return None
+    query = tuple(sorted((k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True)
+                         if not k.lower().startswith("utm_")))
+    return host, parts.path.rstrip("/"), query
+
+
+def _send(req):
+    messages = {
+        "invalid_api_key": "OPENAI_API_KEY の認証に失敗",
+        "insufficient_quota": "OpenAI API の残高・組織の利用枠を確認",
+        "project_spend_limit_exceeded": "OpenAI プロジェクトの支出上限に到達",
+        "organization_spend_limit_exceeded": "OpenAI 組織の支出上限に到達",
+        "model_not_found": "プロジェクトのモデル利用権限を確認",
+        "rate_limit_exceeded": "OpenAI API のレート上限に到達",
+    }
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=120) as response:
+                return json.load(response)
+        except urllib.error.HTTPError as error:
+            try:
+                info = json.loads(error.read()).get("error", {})
+                code = info.get("code")
+            except (ValueError, AttributeError):
+                code = None
+            if error.code == 429 and code == "rate_limit_exceeded" and attempt < 2:
+                try:
+                    delay = float(error.headers.get("Retry-After", 0))
+                except (TypeError, ValueError):
+                    delay = 0
+                time.sleep(min(20, max(2 ** (attempt + 1), delay)))
+                continue
+            hint = messages.get(code, "Actions の入力・OpenAI API の状態を確認") if isinstance(code, str) else ""
+            raise AgentError(f"OpenAI HTTP {error.code} {hint}".strip(), unmetered=error.code >= 500) from None
+        except (OSError, ValueError):
+            # 受理されたか不明な通信エラーを自動で再送すると、二重課金になり得る。
+            raise AgentError("OpenAI API の応答を取得できませんでした", unmetered=True) from None
+
+
+def call(api_key, model, system, prompt, schema, max_searches, domains=None, max_tokens=3000):
+    """構造化された結果と、検索で実際に返された URL・使用量を返す。"""
+    search = {"type": "web_search", "search_context_size": "low", "external_web_access": True}
+    if domains:
+        search["filters"] = {"allowed_domains": domains}
+    body = {
+        "model": model, "instructions": system, "input": prompt, "store": False,
+        "reasoning": {"effort": "low"}, "max_output_tokens": max_tokens,
+        "tools": [search], "tool_choice": "required", "max_tool_calls": max_searches,
+        "include": ["web_search_call.action.sources"],
+        "text": {"format": {"type": "json_schema", "name": "price_watch_result",
+                            "schema": schema, "strict": True}},
+    }
+    req = urllib.request.Request(API_URL, data=json.dumps(body).encode(), headers={
+        "Authorization": f"Bearer {api_key}", "Content-Type": "application/json",
+    })
+    response = _send(req)
+    if not isinstance(response, dict):
+        raise AgentError("OpenAI API の応答形式が不正", unmetered=True)
+    output = response.get("output") or []
+    searches = [item for item in output if item.get("type") == "web_search_call"]
+    raw = response.get("usage") or {}
+    request = {"in": raw.get("input_tokens", 0), "out": raw.get("output_tokens", 0),
+               "cache_read": (raw.get("input_tokens_details") or {}).get("cached_tokens", 0)}
+    usage = {**request, "searches": len(searches), "requests": [request], "sources": [], "unmetered": not raw}
+    if response.get("status") != "completed":
+        reason = (response.get("incomplete_details") or {}).get("reason")
+        message = "出力トークン上限に到達" if reason == "max_output_tokens" else "OpenAI の応答が未完了"
+        raise AgentError(message, usage)
+    if len(searches) > max_searches:
+        raise AgentError("検索回数が設定上限を超過", usage)
+    completed_searches = [s for s in searches if s.get("status") == "completed"]
+    if not completed_searches:
+        raise AgentError("公式ページの検索を完了できませんでした", usage)
+
+    sources = []
+    for item in completed_searches:
+        action = item.get("action") or {}
+        sources.extend(entry.get("url") for entry in action.get("sources") or [])
+        sources.append(action.get("url"))
+    parts = [part for item in output if item.get("type") == "message" for part in item.get("content", [])]
+    if any(part.get("type") == "refusal" for part in parts):
+        raise AgentError("OpenAI が回答を拒否", usage)
+    texts = [part for part in parts if part.get("type") == "output_text"]
+    for part in texts:
+        sources.extend(a.get("url") for a in part.get("annotations", []) if a.get("type") == "url_citation")
+    usage["sources"] = list(dict.fromkeys(url for url in sources if url_key(url)))
+    try:
+        data = json.loads("".join(part["text"] for part in texts))
+    except (KeyError, ValueError):
+        raise AgentError("OpenAI 応答の JSON を読めませんでした", usage) from None
+    if not isinstance(data, dict):
+        raise AgentError("OpenAI 応答の JSON がオブジェクトではありません", usage)
+    return data, usage
 
 
 def cost_usd(model, usage, pricing):
-    """モデル別の単価表(site.json)で概算する。Haiku 5.5 は10万トークン超のリクエストが5倍。"""
-    p = pricing["models"].get(model)
-    if not p:
+    """入力トークンのうちキャッシュヒット分にだけ割引単価を適用する。"""
+    rates = pricing["models"].get(model)
+    if not rates:
         return None
-    total = 0.0
-    for r in usage["requests"]:
-        mult = p.get("long_mult", 1) if r["in"] + r["cache_read"] > p.get("long_threshold", 10**12) else 1
-        total += (r["in"] * p["in"] + r["out"] * p["out"] + r["cache_read"] * p.get("cache_read", p["in"] * 0.1)) * mult / 1e6
-    total += usage["searches"] * pricing["web_search_per_1000"] / 1000
+    total = usage["searches"] * pricing["web_search_per_1000"] / 1000
+    for req in usage["requests"]:
+        cached = min(req["cache_read"], req["in"])
+        long = req["in"] > rates.get("long_threshold", float("inf"))
+        input_rate = rates["in"] * (2 if long else 1)
+        cached_rate = rates["cache_read"] * (2 if long else 1)
+        output_rate = rates["out"] * (1.5 if long else 1)
+        total += ((req["in"] - cached) * input_rate + cached * cached_rate + req["out"] * output_rate) / 1e6
     return round(total, 5)

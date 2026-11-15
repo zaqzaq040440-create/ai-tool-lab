@@ -7,6 +7,10 @@ on:
         description: "新ツール探索(スカウト)も実行する"
         type: boolean
         default: false
+      smoke:
+        description: "初回の疎通確認（ChatGPT 1件をLunaとSolで調査）"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -18,16 +22,30 @@ concurrency:
 
 jobs:
   explore:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: AIチームが調査(Haiku調査員 → コード検証 → Sonnetレビュー)
+      - name: APIを使用せずに動作確認
+        run: python3 tests/test_pipeline.py
+
+      - name: GPT-6 Lunaが調査し、必要な結果をGPT-6.1 Solが再確認
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SCOUT: ${{ inputs.scout && '1' || '0' }}
+          SMOKE: ${{ inputs.smoke && '1' || '0' }}
         run: python3 scripts/explore.py
+
+      - name: 調査結果・出典・概算を実行結果に掲載
+        if: ${{ !cancelled() }}
+        run: |
+          if [[ -f .explore/pr_body.md ]]; then
+            cat .explore/pr_body.md >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: サイトが壊れていないか確認
         run: python3 scripts/build.py
@@ -39,16 +57,27 @@ jobs:
           if git diff --quiet -- data/tools.json data/changelog.json; then
             echo "反映できる結果なし。PRは作りません。"; exit 0
           fi
-          # 前日以前の未承認PRは古いので閉じる
-          for n in $(gh pr list --label explore --state open --json number -q '.[].number'); do
-            gh pr close "$n" --delete-branch --comment "新しい探索結果があるため閉じました"
-          done
-          d=$(TZ=Asia/Tokyo date +%F-%H%M)
+          main_sha=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [[ "$main_sha" != "$GITHUB_SHA" ]]; then
+            echo "探索中にmainが更新されました。最新のmainから探索をやり直してください。"
+            exit 1
+          fi
+          d=$(TZ=Asia/Tokyo date +%F)
+          branch="explore/$d-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           git config user.name "explore-bot"
           git config user.email "explore-bot@users.noreply.github.com"
-          git switch -c "explore/$d"
-          git add data/
+          git switch -c "$branch"
+          git add -- data/tools.json data/changelog.json data/run_latest.json
           git commit -m "探索結果 $d"
-          git push -u origin "explore/$d"
-          gh label create explore --color 2f5d50 2>/dev/null || true
-          gh pr create --title "【承認待ち】探索結果 $d" --body-file .explore/pr_body.md --label explore --base main
+          gh auth setup-git
+          git push origin "HEAD:refs/heads/$branch"
+          gh label create explore --color 2f5d50 --force
+          created=$(gh pr create --head "$branch" --title "【承認待ち】探索結果 $d" --body-file .explore/pr_body.md --label explore --base main)
+          echo "[承認待ちPR]($created)" >> "$GITHUB_STEP_SUMMARY"
+          number=${created##*/}
+          # 新しいPRの作成が成功してから、古い探索PRを閉じる。
+          previous=$(gh pr list --limit 100 --label explore --base main --state open --json number,headRefName,isCrossRepository \
+            --jq ".[] | select(.number != $number and (.isCrossRepository | not) and (.headRefName | startswith(\"explore/\"))) | .number")
+          for old in $previous; do
+            gh pr close "$old" || echo "::warning::以前の探索PR #$old を閉じられませんでした"
+          done
