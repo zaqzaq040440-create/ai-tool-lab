@@ -74,7 +74,7 @@ def call(api_key, model, system, prompt, schema, max_searches, domains=None, max
     body = {
         "model": model, "instructions": system, "input": prompt, "store": False,
         "reasoning": {"effort": "low"}, "max_output_tokens": max_tokens,
-        "tools": [search], "tool_choice": {"type": "web_search"}, "max_tool_calls": max_searches,
+        "tools": [search], "tool_choice": "required", "max_tool_calls": max_searches,
         "include": ["web_search_call.action.sources"],
         "text": {"format": {"type": "json_schema", "name": "price_watch_result",
                             "schema": schema, "strict": True}},

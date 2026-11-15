@@ -56,7 +56,7 @@ class ResponsesTests(unittest.TestCase):
         self.assertEqual(sent["max_tool_calls"], 2)
         self.assertEqual(sent["max_output_tokens"], 2400)
         self.assertEqual(sent["tools"][0]["filters"]["allowed_domains"], ["openai.com"])
-        self.assertEqual(sent["tool_choice"], {"type": "web_search"})
+        self.assertEqual(sent["tool_choice"], "required")
         self.assertTrue(sent["text"]["format"]["strict"])
         self.assertFalse(sent["store"])
         self.assertEqual(data, price_data(URL))
