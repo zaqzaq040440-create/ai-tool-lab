@@ -36,13 +36,26 @@ def money(p):
     return f"{sym}{p['price']:,}/{p['period']}"
 
 
-def monthly(p):
-    return p["price"] / 12 if p["period"] == "年" else p["price"]
+def monthly_jpy(p, usd_jpy):
+    amount = p["price"] * (usd_jpy if p["currency"] == "USD" else 1)
+    return amount / 12 if p["period"] == "年" else amount
 
 
-def cheapest(t):
+def cheapest(t, usd_jpy):
     paid = [p for p in t.get("plans", []) if p["price"] > 0]
-    return min(paid, key=monthly) if paid else None
+    return min(paid, key=lambda p: monthly_jpy(p, usd_jpy), default=None)
+
+
+def history_value(entry, key):
+    price = e(entry[key])
+    if entry.get("free_before", "") != entry.get("free_after", ""):
+        return price + "<br>無料枠 " + e(entry.get(f"free_{key}") or "なし")
+    return price
+
+
+def history_sources(entry):
+    return " ".join(f'<a href="{e(url)}" rel="noopener">出典{i}</a>'
+                    for i, url in enumerate(entry.get("sources", []), 1))
 
 
 def page(site, title, body, rel=""):
@@ -72,6 +85,7 @@ def build(site, tools, changelog, run=None):
     live = [t for t in tools if t.get("last_verified") and t.get("plans")]
     recent = {c["tool_id"] for c in changelog[:30]}
     urls = ["index.html", "changes.html", "about.html"]
+    rate = site.get("pricing", {}).get("usd_jpy", 150)
 
     # トップ:カテゴリ別比較表
     cats = defaultdict(list)
@@ -83,10 +97,12 @@ def build(site, tools, changelog, run=None):
         c = changelog[0]
         parts.append(f"<p>最新の変更: <span class='chg'>{e(c['date'])} {e(c['tool_name'])}</span> "
                      f"<a href='changes.html'>変更履歴を見る</a></p>")
+    if live:
+        parts.append(f"<p class='src'>最安の有料プランを月額にそろえ、1 USD＝{rate:g}円の固定レートで比較しています。</p>")
     for cat in sorted(cats):
         rows = []
-        for t in sorted(cats[cat], key=lambda x: monthly(cheapest(x)) if cheapest(x) else 0):
-            cp = cheapest(t)
+        entries = [(t, cheapest(t, rate)) for t in cats[cat]]
+        for t, cp in sorted(entries, key=lambda pair: monthly_jpy(pair[1], rate) if pair[1] else float("inf")):
             mark = " <span class='chg'>●最近変更</span>" if t["id"] in recent else ""
             rows.append(
                 f"<tr><td><a href='tools/{e(t['id'])}.html'>{e(t['name'])}</a>{mark}</td>"
@@ -95,7 +111,7 @@ def build(site, tools, changelog, run=None):
         parts.append(f"<h2>{e(cat)}</h2><div class='tbl'><table><tr><th>ツール</th><th>最安の有料プラン</th>"
                      f"<th>無料枠</th><th>確認日</th><th></th></tr>{''.join(rows)}</table></div>")
     if not live:
-        parts.append("<p>まだ確認済みのツールがありません。最初の探索を実行してください。</p>")
+        parts.append("<p>確認済みの料金を準備中です。</p>")
     (PUB / "index.html").write_text(page(site, site["title"], "".join(parts)), "utf-8")
 
     # ツール個別ページ
@@ -103,7 +119,8 @@ def build(site, tools, changelog, run=None):
         hist = [c for c in changelog if c["tool_id"] == t["id"]]
         plan_rows = "".join(f"<tr><td>{e(p['name'])}</td><td class='n'>{e(money(p))}</td><td>{e(p.get('note', ''))}</td></tr>"
                             for p in t["plans"])
-        hist_html = "".join(f"<li>{e(c['date'])}: {e(c['before'])} → <b>{e(c['after'])}</b></li>" for c in hist) \
+        hist_html = "".join(f"<li>{e(c['date'])}<br>{history_value(c, 'before')} → <b>{history_value(c, 'after')}</b> "
+                            f"<span class='src'>{history_sources(c)}</span></li>" for c in hist) \
             or "<li>記録開始以降、変更はありません。</li>"
         srcs = "".join(f"<li><a href='{e(s)}' rel='noopener' target='_blank'>{e(s)}</a></li>" for s in t.get("sources", []))
         body = (f"<h1>{e(t['name'])} の料金と無料枠</h1><p class='lead'>{e(t['vendor'])} / {e(t['category'])} / "
@@ -118,8 +135,8 @@ def build(site, tools, changelog, run=None):
     # 変更履歴
     items = "".join(
         f"<tr><td class='n'>{e(c['date'])}</td><td><a href='tools/{e(c['tool_id'])}.html'>{e(c['tool_name'])}</a></td>"
-        f"<td>{e(c['before'])}</td><td><b>{e(c['after'])}</b></td>"
-        f"<td class='src'>{' '.join(f'<a href={chr(39)}{e(s)}{chr(39)} rel=noopener>出典</a>' for s in c.get('sources', []))}</td></tr>"
+        f"<td>{history_value(c, 'before')}</td><td><b>{history_value(c, 'after')}</b></td>"
+        f"<td class='src'>{history_sources(c)}</td></tr>"
         for c in changelog)
     body = ("<h1>料金・無料枠の変更履歴</h1><p class='lead'>毎日の調査で見つかった変更を記録しています。</p>"
             + (f"<div class='tbl'><table><tr><th>日付</th><th>ツール</th><th>変更前</th><th>変更後</th><th></th></tr>{items}</table></div>"
@@ -140,13 +157,13 @@ def build(site, tools, changelog, run=None):
            "run": run, "sample": json.loads(sample_p.read_text("utf-8")) if sample_p.exists() else None}
     tpl = (ROOT / "scripts" / "admin.html").read_text("utf-8")
     (PUB / "admin.html").write_text(
-        tpl.replace("__CONFIG__", json.dumps(cfg, ensure_ascii=False).replace("</", "<\\/")), "utf-8")
+        tpl.replace("__CONFIG__", json.dumps(cfg, ensure_ascii=False).replace("<", "\\u003c")), "utf-8")
 
     base = site["base_url"].rstrip("/")
     sm = "".join(f"<url><loc>{e(base)}/{u}</loc></url>" for u in urls)
     (PUB / "sitemap.xml").write_text(
         f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{sm}</urlset>', "utf-8")
-    (PUB / "robots.txt").write_text(f"User-agent: *\nAllow: /\nDisallow: /admin.html\nSitemap: {base}/sitemap.xml\n", "utf-8")
+    (PUB / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n", "utf-8")
     return len(live)
 
 

@@ -1,93 +1,43 @@
 # AIツール料金ウォッチ
 
-主要AIツールの料金と無料枠をAIチームが毎日調査し、運営者が承認したものだけを公開するサイトです。料金の**変更履歴**を出典つきで記録していきます。
+主要AIツールの個人向け料金と無料枠を調べ、運営者が承認したデータをGitHub Pagesに掲載します。料金・無料枠の変更履歴には、確認日、変更前後の値、公式出典が残ります。
 
-## AIチームの構成(API代を抑える設計)
+## スマホでの初期設定
 
-| 役割 | 担当 | 何をするか | 呼ばれる頻度 |
-|---|---|---|---|
-| orchestrator | コード(0円) | 確認日が古い順に対象を選び、結果を振り分ける | 毎回 |
-| researcher | **Haiku 5.5** × 6 並列 | 1ツールずつ公式料金ページを調べる。検索は公式ドメインに限定、2〜3回まで | 毎回 |
-| checker | コード(0円) | 形式チェックと前回との差分判定。**変化がなければここで終わり** | 毎回 |
-| reviewer | **Sonnet 5.5** | 「料金が変わった」「新規」「Haikuが自信なし」のときだけ独立に再調査 | 必要なときだけ(上限4件) |
-| scout | Haiku 5.5 | 新しいツール候補を探す | 月曜だけ(またはチェックを入れたとき) |
-| you | あなた | 12時に結果を見て承認 | 毎日 |
+GitHubはスマホのブラウザで開きます。`Settings` や `Run workflow` が見えない場合は、Safariのページメニューで「デスクトップ用Webサイトを表示」を選びます。
 
-料金はほとんどの日は変わらないので、大半の日は安いHaikuだけで終わります。高いSonnetは「変化があったときの確認」にしか使いません。
+1. OpenAI Platformでこのサイト用のプロジェクトを選び、APIの請求設定と `gpt-6-luna`・`gpt-6.1-sol` の利用可否を確認します。`Limits` の月次支出上限を設定し、`Enforce a hard limit` をオンにします。初期値の目安は月 **$15**（1ドル150円の仮定で約2,250円）です。[OpenAI Platform](https://platform.openai.com/) · [支出上限の設定](https://developers.openai.com/api/docs/guides/spend-limits)
+2. 保有するプロジェクトキーを使うか、新しいAPIキーを発行します。GitHubの `New repository secret` を開き、Nameに `OPENAI_API_KEY`、Secretにキーを入力して保存します。キーの入力先はこの欄です。[OpenAI API Keys](https://platform.openai.com/api-keys) · [GitHub Secrets](https://github.com/zaqzaq040440-create/ai-tool-lab/settings/secrets/actions/new)
+3. GitHubの **Actions → General → Workflow permissions** で **Allow GitHub Actions to create and approve pull requests** をオンにして保存します。探索ワークフローに必要な書き込み権限は設定済みです。PRの承認・マージは運営者が行います。[Actions設定](https://github.com/zaqzaq040440-create/ai-tool-lab/settings/actions)
+4. GitHubの **Pages → Build and deployment → Source** を **GitHub Actions** にします。公開ワークフローがまだ成功していなければ `main` を選び **Run workflow** を押します。成功後は公開URLと `/admin.html` の両方を開けます。[Pages設定](https://github.com/zaqzaq040440-create/ai-tool-lab/settings/pages) · [② 公開](https://github.com/zaqzaq040440-create/ai-tool-lab/actions/workflows/deploy.yml) · [公開サイト](https://zaqzaq040440-create.github.io/ai-tool-lab/) · [管理画面](https://zaqzaq040440-create.github.io/ai-tool-lab/admin.html)
 
-Opusは使いません。この仕事は判断が単純で、Sonnetで十分だからです。
+## 最初の実API確認
 
-コストは毎回概算され、ダッシュボードとPRに表示されます。単価は `site.json` の `pricing` にあり、公式の料金ページで確認して更新してください。
+1. GitHubの **① 探索 → Run workflow** でブランチを `main` にし、「初回の疎通確認」をオンにして実行します。ChatGPTの料金1件をLunaとSolが公式情報から調べます。スカウトはこのモードでは動きません。[① 探索](https://github.com/zaqzaq040440-create/ai-tool-lab/actions/workflows/explore.yml)
+2. 実行結果の **Summary** で結果、出典、2モデルの利用、検索回数と概算を見ます。掲載候補がある場合、同じ画面に**承認待ちPR**のリンクが出ます。掲載内容に問題がなければ、そのPRで **Squash and merge** を選びます。見送るときは **Close pull request** を選びます。
+3. **② 公開** が成功したら、公開サイトと変更履歴を開きます。初回掲載の料金と出典はツール個別ページに出ます。次回から疎通確認をオフにして通常探索を行います。[② 公開](https://github.com/zaqzaq040440-create/ai-tool-lab/actions/workflows/deploy.yml) · [公開サイト](https://zaqzaq040440-create.github.io/ai-tool-lab/)
 
-## 毎日の操作
+## 毎日の操作（日本時間）
 
-管理ダッシュボード `https://<ユーザー名>.github.io/ai-tool-lab/admin.html` をスマホのホーム画面に追加しておくと便利です。
-
-| 時刻 | 操作 | 何が起きるか |
+| 時刻 | 管理画面の操作 | 結果 |
 |---|---|---|
-| 8:00 | **① 探索を開始** | AIチームが調査し、承認待ちのPRを作る(数分〜15分) |
-| 12:00 | 結果を確認して **② 承認して公開** | サイトが再生成されて公開される |
+| 8:00 | **① 探索を開始** | 確認日が古い順に最大6件。月曜はスカウトも実行し、ほかの日はチェックを入れて追加できます。 |
+| 12:00 | 変更・新規・初回掲載の出典を確認し、**② 承認して公開** | 価格データのPRを人間がマージすると、GitHub Pagesに反映されます。却下する場合は **却下** を2回押します。 |
 
-- 「料金変更」と「新規」は、「GitHubで出典を確認 →」から出典を見てから承認してください。
-- おかしければ **却下** を押します。2回押すと確定し、何も公開されません。
+管理画面のボタンは、GitHubトークン未設定時にはGitHubの該当画面を開きます。直接操作したい場合は、このリポジトリ専用の **fine-grained token** を用意し、**Actions・Contents・Pull requests** をそれぞれ **Read and write** にして、管理画面下部の設定に入力します。トークンは開いているタブのセッションに保存されます。タブを閉じたら、直接操作を使う場合に再登録します。OpenAIのキーはGitHub Secretsで管理します。[Fine-grained tokenの作成](https://github.com/settings/personal-access-tokens/new)
 
-ボタンは次のように動きます。
+管理画面と承認待ちPRは公開URLです。PRには価格、出典、検索回数、概算費用が出ます。探索で有効な変更がなければPRは作成せず、結果はActionsのSummaryから確認できます。新しい探索PRができた時点で前の探索PRを閉じます。
 
-- **GitHubトークンを設定した場合**：ダッシュボード下の「設定」に入れると、ボタンがその場で実行されます。
-- **未設定の場合**：GitHubの該当画面(Run workflow / Merge / Close)が開きます。
+## 調査と費用
 
-トークンは fine-grained token を使い、権限は次のとおりにしてください。
+- 調査員・スカウトは **GPT-6 Luna**、再確認は **GPT-6.1 Sol**。調査員は公式ドメインに限定し、料金ページが既知なら検索上限は2回、未登録なら3回です。Solの確認は1件3回、1回の探索で最大4件です。スカウトは候補探しに4回まで検索し、掲載前にSolが公式ドメインで再確認します。
+- 検索で返った公式URLにひもづく結果を採用候補にします。確信度が低い、価格が不明、出典を照合できない、再確認で見送った結果は掲載候補から外します。初期12件の掲載はSolの再確認が通ったものから順次行います。
+- API応答のトークン数・検索回数と `site.json` の単価から概算します。OpenAIのWeb検索は **$0.01/回** に加え、モデルのトークン料金がかかります。1回の通常探索で検索料の上限は、スカウト込みで34回・$0.34です。実際の請求額はOpenAI Usageで確認します。[API料金](https://developers.openai.com/api/docs/pricing) · [OpenAI Usage](https://platform.openai.com/usage)
 
-- 対象：このリポジトリのみ
-- 権限：Actions、Contents、Pull requests を Read and write
+## 収益化と掲載方針
 
-トークンはそのブラウザの中だけに保存されます。ダッシュボードは検索エンジンに載らない設定(noindex)ですが、URLを知っていれば誰でも見られます。表示されるのは調査状況だけで、秘密情報は含みません。
+提携できたサービスの `affiliate_url` にリンクを登録します。該当するリンクには「PR」と `rel="sponsored"` が付き、各比較ページには広告の説明を掲載します。表示順は月額にそろえた最安の有料プランの料金で決めます。体験談を掲載する場合は実際に確認できたものに限ります。
 
-## 初期設定(最初の1回だけ・約15分)
+## 開発
 
-1. GitHubで新しいリポジトリ(例：`ai-tool-lab`、Public)を作り、このフォルダの中身をすべてアップロードします。
-2. `site.json` の `base_url` と `repo` を自分のものに書き換えます。
-3. [Anthropic Console](https://console.anthropic.com/) で次の3つを行います。
-   - APIキーの発行
-   - 利用上限(Spend limit)の設定
-   - Web検索の有効化
-4. リポジトリの Settings で次の3か所を設定します。
-   - **Secrets and variables → Actions**:`ANTHROPIC_API_KEY` を登録
-   - **Actions → General → Workflow permissions**:「Read and write」を選び、「Allow GitHub Actions to create and approve pull requests」にチェック
-   - **Pages → Source**:「GitHub Actions」を選択
-5. ダッシュボードから ① を押します。初回は12ツールすべてが未確認なので、2日で埋まります。
-
-## 収益化
-
-- ASPに登録し、提携できたツールは `data/tools.json` の `affiliate_url` にリンクを入れます。
-- そのツールのリンクには「PR」表示と `rel="sponsored"` が自動で付きます。
-- 広告表記と運営方針ページは最初から入っています。
-- Search Console に `sitemap.xml` を送信してください。
-
-## 安全装置
-
-次の結果はサイトに反映されず、PRの「反映しなかったもの」に表示されます。
-
-- 出典がない
-- 確信度が低い
-- 料金が取れなかった
-- Sonnetが却下した
-
-レビューは1回あたり4件までです。超えた分は次回に回るので、API代が暴走しません。
-
-`python3 tests/test_pipeline.py` を実行すると、APIを使わずにAIチームの流れ全体をテストできます。
-
-## ファイル構成
-
-```
-site.json                      サイト・モデル・単価の設定
-data/tools.json                ツールと料金
-data/changelog.json            料金変更の履歴
-data/run_latest.json           直近の探索ログ(ダッシュボード用)
-scripts/explore.py             AIチーム(orchestrator / researcher / checker / reviewer / scout)
-scripts/agents.py              Claude API クライアントとコスト計算
-scripts/build.py               静的サイト + ダッシュボード生成
-scripts/admin.html             ダッシュボードのテンプレート
-.github/workflows/explore.yml  ① 探索
-.github/workflows/deploy.yml   ② 公開
-```
+Pythonの標準ライブラリで動作します。`python3 tests/test_pipeline.py` はAPIなしで探索、再確認、データ更新、サイト生成を検証します。`python3 scripts/build.py` で `public/` を生成します。`/admin.html?demo` ではサンプルで操作を確認できます。実際の探索には `OPENAI_API_KEY` が必要です。
